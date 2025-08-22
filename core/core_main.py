@@ -4,8 +4,9 @@ from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from core_logic import CoreLogic
 class Core:
-    def __init__(self, url, timeout = 3, max_retries = 3, classOneClick = None, classTwoClick = None):
+    def __init__(self, url, timeout = 1, max_retries = 3, classOneClick = "block", classTwoClick = None):
         self.url = url
         self.timeout = timeout
         self.max_retries = max_retries
@@ -17,8 +18,8 @@ class Core:
         try:
             driver.get(self.url)
             print("Страница загружена. Ожидаем динамические элементы...")
-            while True:
-                await asyncio.sleep(1)  
+            coreLogic = CoreLogic(driver, self.max_retries, self.timeout, self.classOneClick, self.classTwoClick)
+            await coreLogic.monitor_dynamic_elements_simple()
         except Exception as e:
             print(f"Критическая ошибка: {e}")
         finally:

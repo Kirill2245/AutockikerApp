@@ -29,9 +29,44 @@ class CoreLogic:
                     elem.click()
                     print(f"Успешный клик")
                     return True
-                await asyncio.sleep(5)  
+                await asyncio.sleep(self.timeout)  
             except Exception as e:
                 print(f"Попытка {attempt + 1} не удалась: {e}")
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.timeout // 3)
         return False
-    
+    async def monitor_dynamic_elements_simple(self):
+        last_count = 0
+        while True:
+            try:
+                blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
+                if not blocks:  
+                    blocks = self.driver.find_elements(By.CLASS_NAME, "MuiTableBody-root")
+                current_count = len(blocks)
+                
+                if current_count > last_count:
+                    print(f"Появилось новых элементов: {current_count - last_count}")
+                    
+                    for i in range(last_count, current_count):
+                        try:
+                            block = blocks[i]
+                            if await self.click_element(block, self.max_retries):
+                                print(f"Кликнули на элемент {i+1}")
+                            modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "modal", self.timeout)
+                            await asyncio.sleep(self.timeout / 2) 
+                            if self.classTwoClick:
+                                button = await self.wait_for_element(modal, By.CLASS_NAME, self.classTwoClick, self.timeout)
+                            else:
+                                button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
+                            if not button:
+                                print("Кнопка не найдена ни по классу, ни по тегу")
+                            if await self.click_element(button, self.max_retries):
+                                print(f"Кликнули на кнопку {i+1}")
+                                
+                        except Exception as e:
+                            print(f"Ошибка с элементом {i+1}: {e}")
+                        await asyncio.sleep(self.timeout / 10)
+                    last_count = current_count
+                await asyncio.sleep(self.timeout // 3)
+            except Exception as e:
+                print(f"Ошибка: {e}")
+                await asyncio.sleep(self.timeout // 3)
