@@ -26,6 +26,7 @@ class Core:
     async def stop_main_process(self):
         driver = uc.Chrome(use_subprocess=True)
         driver.quit()
+
 if __name__ == "__main__":
     core = Core("http://localhost:5173/")
     asyncio.run(core.run_main_process())
