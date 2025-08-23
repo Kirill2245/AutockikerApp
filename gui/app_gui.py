@@ -129,20 +129,20 @@ class AppGUI:
         self.root.label4 = tk.Label(self.root, text = "Retries", fg = "White", bg = "#696969", font = custom_font) #LABEL Retries
         self.root.label4.place(x = 73,y = 170)
 
-        self.root.entry3 = tk.Entry(self.root, width = 20) #ENTRY first click
-        self.root.entry3.place(x = 150, y = 210)
-        self.root.label4 = tk.Label(self.root, text = "First click", fg = "White", bg = "#696969", font = custom_font) #LABEL first click
-        self.root.label4.place(x = 50,y = 205)
+        self.root.entry4 = tk.Entry(self.root, width = 20) #ENTRY first click
+        self.root.entry4.place(x = 150, y = 210)
+        self.root.label5 = tk.Label(self.root, text = "First click", fg = "White", bg = "#696969", font = custom_font) #LABEL first click
+        self.root.label5.place(x = 50,y = 205)
 
-        self.root.entry3 = tk.Entry(self.root, width = 20) #ENTRY last click
-        self.root.entry3.place(x = 150, y = 245)
-        self.root.label4 = tk.Label(self.root, text = "Last click", fg = "White", bg = "#696969", font = custom_font) #LABEL last click
-        self.root.label4.place(x = 50,y = 240)
+        self.root.entry5 = tk.Entry(self.root, width = 20) #ENTRY last click
+        self.root.entry5.place(x = 150, y = 245)
+        self.root.label6 = tk.Label(self.root, text = "Last click", fg = "White", bg = "#696969", font = custom_font) #LABEL last click
+        self.root.label6.place(x = 50,y = 240)
 
-        self.root.entry3 = tk.Entry(self.root, width = 17) #ENTRY class modal
-        self.root.entry3.place(x = 170, y = 280)
-        self.root.label4 = tk.Label(self.root, text = "Class modal", fg = "White", bg = "#696969", font = custom_font) #LABEL class modal
-        self.root.label4.place(x = 50,y = 275)
+        self.root.entry6 = tk.Entry(self.root, width = 17) #ENTRY class modal
+        self.root.entry6.place(x = 170, y = 280)
+        self.root.label7 = tk.Label(self.root, text = "Class modal", fg = "White", bg = "#696969", font = custom_font) #LABEL class modal
+        self.root.label7.place(x = 50,y = 275)
 
         self.root.button1 = tk.Button(self.root, height = 2, width = 30, text = "Save and Run", bg = "#696969") #button Save and Run
         self.root.button1.place(x = 65, y = 320) 
@@ -270,15 +270,27 @@ class AppGUI:
     
     def on_save_run(self):
         """Обработчик кнопки Save and Run"""
-        url = self.root.entry1.get()
-        if url:
-            logging.info(f"Запуск процесса для URL: {url}")
-            self.start_process(url)
+        params = {
+            'url': self.root.entry1.get(),
+            'timeout': self.root.entry2.get(),
+            'retries': self.root.entry3.get(),
+            'first_click': self.root.entry4.get(),
+            'last_click': self.root.entry5.get(),
+            'class_model': self.root.entry6.get()
+        }
+        
+        # Фильтруем только заполненные параметры
+        filtered_params = {k: v for k, v in params.items() if v}
+        
+        if params['url']:
+            logging.info(f"Запуск процесса для URL: {params['url']}")
+            self.start_process(**filtered_params)
         else:
             logging.warning("URL не указан")
     
     def on_run(self):
         url = self.root.entry1.get()
+
         if url:
             logging.info(f"Запуск процесса для URL: {url}")
             self.start_process(url)
@@ -314,7 +326,7 @@ class AppGUI:
             asyncio.set_event_loop(loop)
             try:
                 if self.core:
-                    loop.run_until_complete(self.core.run_main_process(url))
+                    loop.run_until_complete(self.core.run_main_process(url, timeout, max_retries, classOneClick, classTwoClick, classModal))
                 else:
                     # Демо-режим без core
                     logging.info(f"Запущен демо-процесс для {url}")
