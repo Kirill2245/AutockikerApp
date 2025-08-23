@@ -37,7 +37,7 @@ class Core:
         self.is_running = True
         
         await self.log("Запуск основного процесса...", logging.INFO)
-        
+
         try:
             self.driver.get(self.url)
             await self.log("Страница загружена. Ожидаем динамические элементы...", logging.INFO)

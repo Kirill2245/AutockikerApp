@@ -52,10 +52,26 @@ class LogTextHandler:
         
         # Регистрируем себя в emitter
         global_emitter.register_callback(self.handle_log)
+    def _is_chrome_stacktrace(self, message):
+        if not message:
+            return False
+            
+        stacktrace_indicators = [
+            'Stacktrace:',
+            'GetHandleVerifier',
+            '(No symbol)',
+            'BaseThreadInitThunk',
+            'RtlGetAppContainerNamedObjectPath',
+            'from invalid argument:',
+            'unrecognized chrome option:'
+        ]
         
+        message_str = str(message).lower()
+        return any(indicator.lower() in message_str for indicator in stacktrace_indicators)
     def handle_log(self, message, level=logging.INFO):
-        """Callback для обработки логов"""
-        # Определяем цвет в зависимости от уровня
+
+        if self._is_chrome_stacktrace(message):
+            return 
         if level >= logging.ERROR:
             tag = "ERROR"
         elif level >= logging.WARNING:
@@ -130,9 +146,9 @@ class AppGUI:
 
         self.root.button1 = tk.Button(self.root, height = 2, width = 30, text = "Save and Run", bg = "#696969") #button Save and Run
         self.root.button1.place(x = 65, y = 320) 
-        self.root.button2 = tk.Button(self.root, height = 2, width = 12, text = "RUN", bg = "#388662", command = self.start_process("https://www.google.com/")) #button Run
+        self.root.button2 = tk.Button(self.root, height = 2, width = 12, text = "RUN", bg = "#388662", command = self.on_run) #button Run
         self.root.button2.place(x = 60, y = 420) 
-        self.root.button3 = tk.Button(self.root, height = 2, width = 12, text = "STOP", bg = "#693636") #button Save
+        self.root.button3 = tk.Button(self.root, height = 2, width = 12, text = "STOP", bg = "#693636", command=self.on_stop) #button Save
         self.root.button3.place(x = 200, y = 420)
     
 
@@ -151,7 +167,7 @@ class AppGUI:
             fg="#00FF00",  # Зеленый текст
             font=("Consolas", 10),
             insertbackground="white",  # Цвет курсора
-            selectbackground="#555555"  # Цвет выделения
+            selectbackground="#555555"  
         )
         self.console_text.place(x=410, y=50)
         
@@ -262,7 +278,6 @@ class AppGUI:
             logging.warning("URL не указан")
     
     def on_run(self):
-        """Обработчик кнопки Run"""
         url = self.root.entry1.get()
         if url:
             logging.info(f"Запуск процесса для URL: {url}")
@@ -273,10 +288,27 @@ class AppGUI:
     def on_stop(self):
         """Обработчик кнопки Stop"""
         logging.info("Остановка процесса")
-        self.core.stop_main_process()
+        self.stop_process()
         # Здесь должна быть логика остановки
+        
+    def stop_process(self):
+        def stop_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                if self.core:
+                    loop.run_until_complete(self.core.stop_main_process())
+                logging.info("Процесс остановлен")
+            except Exception as e:
+                logging.error(f"Ошибка при остановке: {e}")
+            finally:
+                loop.close()
+        
+        thread = threading.Thread(target=stop_async)
+        thread.daemon = True
+        thread.start()
     
-    def start_process(self, url):
+    def start_process(self, url, timeout, max_retries, classOneClick, classTwoClick, classModal):
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -296,14 +328,6 @@ class AppGUI:
         thread.daemon = True
         thread.start()
 
-# Дополнительные функции для работы с консолью из других частей программы
-# def log_message(message):
-#     """Функция для логирования сообщений из других модулей"""
-#     app.write_to_console(f"[LOG] {message}\n")
-
-# def log_error(message):
-#     """Функция для логирования ошибок"""
-#     app.write_to_console(f"[ERROR] {message}\n")
         
         
 
