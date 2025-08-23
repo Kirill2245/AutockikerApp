@@ -22,7 +22,7 @@ class CoreLogic:
             return element
         except Exception as e:
             print(f"Элемент не найден: {value}, ошибка: {e}")
-            await self.log(f"Элемент не найден: {value}, ошибка: {e}", logging.INFO)
+            await self.log(f"Элемент не найден: {value}, ошибка: {e}", logging.WARNING)
         return None
     
     async def log(self, message, level=logging.INFO):
@@ -38,7 +38,7 @@ class CoreLogic:
                 await asyncio.sleep(self.timeout)  
             except Exception as e:
                 print(f"Попытка {attempt + 1} не удалась: {e}")
-                await self.log(f"Попытка {attempt + 1} не удалась: {e}", logging.INFO)
+                await self.log(f"Попытка {attempt + 1} не удалась: {e}", logging.WARNING)
                 await asyncio.sleep(self.timeout // 3)
         return False
     async def monitor_dynamic_elements_simple(self):
@@ -51,7 +51,7 @@ class CoreLogic:
                 if not blocks:  
                         blocks = self.driver.find_elements(By.CSS_SELECTOR, "tbody > tr")
                 if not blocks:
-                    await self.log("Строка таблицы не найденна", logging.INFO)
+                    await self.log("Строка таблицы не найденна", logging.CRITICAL)
                 current_count = len(blocks)
                 
                 if current_count > last_count:
@@ -67,7 +67,7 @@ class CoreLogic:
                             if not modal:
                                 modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "MuiPaper-root", self.timeout)
                             if not modal:
-                                await self.log("Модальное окно не найденно", logging.INFO)    
+                                await self.log("Модальное окно не найденно", logging.CRITICAL)    
                             await asyncio.sleep(self.timeout / 2) 
                             
                             if self.classTwoClick:
@@ -78,23 +78,24 @@ class CoreLogic:
                                     except:
                                         button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
                                         print("Кнопка не найденна")
-                                        self.log("Кнопка не найденна", logging.INFO)
                             else:
                                 try:
                                     button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']")
                                 except:
                                     button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
                                     print("Кнопка не найденна")
-                                    await self.log("Кнопка не найденна", logging.INFO)
+                            if not button:
+                                await self.log("Кнопка не найденна", logging.CRITICAL)
                             if await self.click_element(button, self.max_retries):
                                 print(f"Кликнули на кнопку {i+1}")
                                 await self.log(f"Кликнули на кнопку {i+1}", logging.INFO)
                         except Exception as e:
                             print(f"Ошибка с элементом {i+1}: {e}")
-                            await self.log(f"Ошибка с элементом {i+1}: {e}", logging.INFO)
+                            await self.log(f"Ошибка с элементом {i+1}: {e}", logging.ERROR)
                         await asyncio.sleep(self.timeout / 10)
                     last_count = current_count
                 await asyncio.sleep(self.timeout // 3)
             except Exception as e:
                 print(f"Ошибка: {e}")
+                await self.log(f"Ошибка {e}", logging.ERROR)
                 await asyncio.sleep(self.timeout // 3)

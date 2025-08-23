@@ -21,8 +21,8 @@ class Core:
         self.emitter.emit_log(message, level)
     
     async def run_main_process(self, url, timeout=0.5, max_retries=3, 
-                            classOneClick="block", classTwoClick="MuiButtonBase-root", 
-                            classModal="modal"):
+                            classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", 
+                            classModal="MuiPaper-root"):
         # Сбрасываем флаг остановки
         self._stop_requested = False
         
