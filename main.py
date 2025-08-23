@@ -1,11 +1,11 @@
 import tkinter as tk
 from gui.app_gui import AppGUI
-
+from core.core_main import Core
 def main():
     
     root = tk.Tk()
-    
-    app = AppGUI(root)
+    core = Core()
+    app = AppGUI(root, core)
 
     root.mainloop()
 

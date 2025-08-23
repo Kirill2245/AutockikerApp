@@ -4,14 +4,16 @@ from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+import logging
 class CoreLogic:
-    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick):
+    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter):
         self.driver = driver
         self.max_retries = max_retries
         self.timeout = timeout
         self.classOneClick = classOneClick
         self.classTwoClick = classTwoClick
+        self.classModal = classModal
+        self.emitter = emitter
     async def wait_for_element(self, driver, by, value, timeout):
         try:
             element = WebDriverWait(driver, timeout).until(
@@ -20,8 +22,12 @@ class CoreLogic:
             return element
         except Exception as e:
             print(f"Элемент не найден: {value}, ошибка: {e}")
+            await self.log(f"Элемент не найден: {value}, ошибка: {e}", logging.INFO)
         return None
     
+    async def log(self, message, level=logging.INFO):
+        self.emitter.emit_log(message, level)
+        
     async def click_element(self, elem, max_retries):
         for attempt in range(max_retries):
             try:
@@ -32,6 +38,7 @@ class CoreLogic:
                 await asyncio.sleep(self.timeout)  
             except Exception as e:
                 print(f"Попытка {attempt + 1} не удалась: {e}")
+                await self.log(f"Попытка {attempt + 1} не удалась: {e}", logging.INFO)
                 await asyncio.sleep(self.timeout // 3)
         return False
     async def monitor_dynamic_elements_simple(self):
@@ -39,31 +46,52 @@ class CoreLogic:
         while True:
             try:
                 blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
+                if not blocks:
+                        blocks = self.driver.find_elements(By.CLASS_NAME, "MuiTableRow-root")
                 if not blocks:  
-                    blocks = self.driver.find_elements(By.CLASS_NAME, "MuiTableBody-root")
+                        blocks = self.driver.find_elements(By.CSS_SELECTOR, "tbody > tr")
+                if not blocks:
+                    await self.log("Строка таблицы не найденна", logging.INFO)
                 current_count = len(blocks)
                 
                 if current_count > last_count:
                     print(f"Появилось новых элементов: {current_count - last_count}")
-                    
+                    await self.log(f"Появилось новых элементов: {current_count - last_count}", logging.INFO)
                     for i in range(last_count, current_count):
                         try:
                             block = blocks[i]
                             if await self.click_element(block, self.max_retries):
-                                print(f"Кликнули на элемент {i+1}")
-                            modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "modal", self.timeout)
+                                print(f"Кликнули на строку таблицы {i+1}")
+                                await self.log(f"Кликнули на строку таблицы{i+1}", logging.INFO)
+                            modal = await self.wait_for_element(self.driver, By.CLASS_NAME, self.classModal, self.timeout)
+                            if not modal:
+                                modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "MuiPaper-root", self.timeout)
+                            if not modal:
+                                await self.log("Модальное окно не найденно", logging.INFO)    
                             await asyncio.sleep(self.timeout / 2) 
+                            
                             if self.classTwoClick:
                                 button = await self.wait_for_element(modal, By.CLASS_NAME, self.classTwoClick, self.timeout)
+                                if not button:
+                                    try:
+                                        button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']", self.timeout)
+                                    except:
+                                        button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
+                                        print("Кнопка не найденна")
+                                        self.log("Кнопка не найденна", logging.INFO)
                             else:
-                                button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
-                            if not button:
-                                print("Кнопка не найдена ни по классу, ни по тегу")
+                                try:
+                                    button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']")
+                                except:
+                                    button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
+                                    print("Кнопка не найденна")
+                                    await self.log("Кнопка не найденна", logging.INFO)
                             if await self.click_element(button, self.max_retries):
                                 print(f"Кликнули на кнопку {i+1}")
-                                
+                                await self.log(f"Кликнули на кнопку {i+1}", logging.INFO)
                         except Exception as e:
                             print(f"Ошибка с элементом {i+1}: {e}")
+                            await self.log(f"Ошибка с элементом {i+1}: {e}", logging.INFO)
                         await asyncio.sleep(self.timeout / 10)
                     last_count = current_count
                 await asyncio.sleep(self.timeout // 3)
