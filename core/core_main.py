@@ -29,7 +29,7 @@ class Core:
             await coreLogic.monitor_dynamic_elements_simple()
         except Exception as e:
             print(f"Критическая ошибка: {e}")
-            await self.log(f"Критическая ошибка: {e}", logging.ERROR)
+            await self.log(f"Критическая ошибка: {e}", logging.INFO)
         finally:
             driver.quit()
     async def stop_main_process(self):
