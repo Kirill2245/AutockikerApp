@@ -5,7 +5,7 @@ from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from core_logic import CoreLogic
+from .core_logic import CoreLogic
 from emitter import global_emitter
 
 class Core:
@@ -22,6 +22,7 @@ class Core:
     async def run_main_process(self, url, timeout=0.5, max_retries=3, 
                             classOneClick="block", classTwoClick="MuiButtonBase-root", 
                             classModal="modal"):
+        # Сбрасываем флаг остановки
         self._stop_requested = False
         
         self.url = url
@@ -54,12 +55,14 @@ class Core:
             await self._safe_quit_driver()
     
     async def _run_with_stop_check(self, coreLogic):
+        """Запуск мониторинга с периодической проверкой флага остановки"""
         while not self._stop_requested:
             try:
                 task = asyncio.create_task(
                     coreLogic.monitor_dynamic_elements_simple()
                 )
                 self.current_task = task
+                
                 done, pending = await asyncio.wait(
                     [task],
                     timeout=1.0,  
@@ -80,9 +83,10 @@ class Core:
                 break
             except Exception as e:
                 await self.log(f"Ошибка в мониторинге: {e}", logging.ERROR)
-                await asyncio.sleep(2)  
+                await asyncio.sleep(2) 
     
     async def _safe_quit_driver(self):
+        """Безопасное закрытие драйвера"""
         if self.driver:
             try:
                 self.driver.quit()
@@ -96,6 +100,7 @@ class Core:
                 self.current_task = None
     
     async def stop_main_process(self):
+        """Остановка процесса - безопасная для вызова из GUI"""
         if not self.is_running:
             await self.log("Процесс не запущен", logging.WARNING)
             return
@@ -103,17 +108,18 @@ class Core:
         self._stop_requested = True
         await self.log("Запрошена остановка процесса...", logging.INFO)
         
-
         if self.current_task and not self.current_task.done():
             self.current_task.cancel()
         
         await asyncio.sleep(0.5)
     
     def stop_main_process_sync(self):
+        """Синхронная версия остановки для вызова из GUI"""
         if not self.is_running:
             return
         
         self._stop_requested = True
+        
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
@@ -122,6 +128,7 @@ class Core:
             asyncio.run(self.stop_main_process())
     
     def force_stop(self):
+        """Принудительная остановка для экстренных случаев"""
         if self.driver:
             try:
                 self.driver.quit()
