@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
 class CoreLogic:
-    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter):
+    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter, core_instance=None):
         self.driver = driver
         self.max_retries = max_retries
         self.timeout = timeout
@@ -14,6 +14,7 @@ class CoreLogic:
         self.classTwoClick = classTwoClick
         self.classModal = classModal
         self.emitter = emitter
+        self.core_instance = core_instance
     async def wait_for_element(self, driver, by, value, timeout):
         try:
             element = WebDriverWait(driver, timeout).until(
@@ -43,7 +44,7 @@ class CoreLogic:
         return False
     async def monitor_dynamic_elements_simple(self):
         last_count = 0
-        while True:
+        while self.core_instance is None or not self.core_instance._stop_requested:
             try:
                 blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
                 if not blocks:
@@ -63,32 +64,32 @@ class CoreLogic:
                             if await self.click_element(block, self.max_retries):
                                 print(f"Кликнули на строку таблицы {i+1}")
                                 await self.log(f"Кликнули на строку таблицы{i+1}", logging.INFO)
-                            modal = await self.wait_for_element(self.driver, By.CLASS_NAME, self.classModal, self.timeout)
-                            if not modal:
-                                modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "MuiPaper-root", self.timeout)
-                            if not modal:
-                                await self.log("Модальное окно не найденно", logging.CRITICAL)    
-                            await asyncio.sleep(self.timeout / 2) 
-                            
-                            if self.classTwoClick:
-                                button = await self.wait_for_element(modal, By.CLASS_NAME, self.classTwoClick, self.timeout)
-                                if not button:
+                                modal = await self.wait_for_element(self.driver, By.CLASS_NAME, self.classModal, self.timeout)
+                                if not modal:
+                                    modal = await self.wait_for_element(self.driver, By.CLASS_NAME, "MuiPaper-root", self.timeout)
+                                if not modal:
+                                    await self.log("Модальное окно не найденно", logging.CRITICAL)    
+                                await asyncio.sleep(self.timeout / 2) 
+                                
+                                if self.classTwoClick:
+                                    button = await self.wait_for_element(modal, By.CLASS_NAME, self.classTwoClick, self.timeout)
+                                    if not button:
+                                        try:
+                                            button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']", self.timeout)
+                                        except:
+                                            button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
+                                            print("Кнопка не найденна")
+                                else:
                                     try:
-                                        button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']", self.timeout)
+                                        button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']")
                                     except:
                                         button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
                                         print("Кнопка не найденна")
-                            else:
-                                try:
-                                    button = await self.wait_for_element(modal, By.XPATH, "//button[text()='Принять']")
-                                except:
-                                    button = await self.wait_for_element(modal, By.TAG_NAME, "button", self.timeout)
-                                    print("Кнопка не найденна")
-                            if not button:
-                                await self.log("Кнопка не найденна", logging.CRITICAL)
-                            if await self.click_element(button, self.max_retries):
-                                print(f"Кликнули на кнопку {i+1}")
-                                await self.log(f"Кликнули на кнопку {i+1}", logging.INFO)
+                                if not button:
+                                    await self.log("Кнопка не найденна", logging.CRITICAL)
+                                if await self.click_element(button, self.max_retries):
+                                    print(f"Кликнули на кнопку {i+1}")
+                                    await self.log(f"Кликнули на кнопку {i+1}", logging.INFO)
                         except Exception as e:
                             print(f"Ошибка с элементом {i+1}: {e}")
                             await self.log(f"Ошибка с элементом {i+1}: {e}", logging.ERROR)
@@ -99,3 +100,4 @@ class CoreLogic:
                 print(f"Ошибка: {e}")
                 await self.log(f"Ошибка {e}", logging.ERROR)
                 await asyncio.sleep(self.timeout // 3)
+        await self.log("Мониторинг остановлен по запросу", logging.INFO)

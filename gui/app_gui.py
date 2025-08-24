@@ -144,7 +144,7 @@ class AppGUI:
         self.root.label7 = tk.Label(self.root, text = "Class modal", fg = "White", bg = "#696969", font = custom_font) #LABEL class modal
         self.root.label7.place(x = 50,y = 275)
 
-        self.root.button1 = tk.Button(self.root, height = 2, width = 30, text = "Save and Run", bg = "#696969") #button Save and Run
+        self.root.button1 = tk.Button(self.root, height = 2, width = 30, text = "Save and Run", bg = "#696969", command=self.on_save_run) #button Save and Run
         self.root.button1.place(x = 65, y = 320) 
         self.root.button2 = tk.Button(self.root, height = 2, width = 12, text = "RUN", bg = "#388662", command = self.on_run) #button Run
         self.root.button2.place(x = 60, y = 420) 
@@ -271,12 +271,12 @@ class AppGUI:
     def on_save_run(self):
         """Обработчик кнопки Save and Run"""
         params = {
-            'url': self.root.entry1.get(),
-            'timeout': self.root.entry2.get(),
-            'retries': self.root.entry3.get(),
-            'first_click': self.root.entry4.get(),
-            'last_click': self.root.entry5.get(),
-            'class_model': self.root.entry6.get()
+            'url': self.root.entry1.get() ,
+            'timeout': int(self.root.entry2.get()) if self.root.entry2.get().strip()  else 0.5,
+            'max_retries': int(self.root.entry2.get()) if self.root.entry2.get().strip()  else 3,
+            'classOneClick': self.root.entry4.get(),
+            'classTwoClick': self.root.entry5.get(),
+            'classModal': self.root.entry6.get()
         }
         
         # Фильтруем только заполненные параметры
@@ -320,7 +320,7 @@ class AppGUI:
         thread.daemon = True
         thread.start()
     
-    def start_process(self, url, timeout, max_retries, classOneClick, classTwoClick, classModal):
+    def start_process(self, url, timeout, max_retries, classOneClick = "MuiTableRow-root", classTwoClick = "MuiButtonBase-root", classModal = "MuiPaper-root"):
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)

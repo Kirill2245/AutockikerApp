@@ -15,15 +15,14 @@ class Core:
         self.driver = None
         self.is_running = False
         self._stop_requested = False
-        self.current_task = None
     
     async def log(self, message, level=logging.INFO):
         self.emitter.emit_log(message, level)
     
-    async def run_main_process(self, url, timeout=0.5, max_retries=3, 
+    async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
                             classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", 
                             classModal="MuiPaper-root"):
-        # Сбрасываем флаг остановки
+
         self._stop_requested = False
         
         self.url = url
@@ -32,7 +31,11 @@ class Core:
         self.classOneClick = classOneClick
         self.classTwoClick = classTwoClick
         self.classModal = classModal
-        
+        if self.driver:
+            try:
+                self.driver.quit()
+            except:
+                pass
         self.driver = uc.Chrome(use_subprocess=True)
         self.is_running = True
         
@@ -44,47 +47,16 @@ class Core:
             
             coreLogic = CoreLogic(self.driver, self.max_retries, self.timeout, 
                                 self.classOneClick, self.classTwoClick, 
-                                self.classModal, self.emitter)
+                                self.classModal, self.emitter, self)
             
-            await self._run_with_stop_check(coreLogic)
-            
+            await coreLogic.monitor_dynamic_elements_simple()
+                
         except Exception as e:
             error_msg = f"Критическая ошибка: {e}"
             print(error_msg)
             await self.log(error_msg, logging.ERROR)
         finally:
             await self._safe_quit_driver()
-    
-    async def _run_with_stop_check(self, coreLogic):
-        """Запуск мониторинга с периодической проверкой флага остановки"""
-        while not self._stop_requested:
-            try:
-                task = asyncio.create_task(
-                    coreLogic.monitor_dynamic_elements_simple()
-                )
-                self.current_task = task
-                
-                done, pending = await asyncio.wait(
-                    [task],
-                    timeout=1.0,  
-                    return_when=asyncio.FIRST_COMPLETED
-                )
-                
-                if self._stop_requested:
-                    if not task.done():
-                        task.cancel()
-                        try:
-                            await task
-                        except asyncio.CancelledError:
-                            pass
-                    break
-                    
-            except asyncio.CancelledError:
-                await self.log("Мониторинг прерван", logging.INFO)
-                break
-            except Exception as e:
-                await self.log(f"Ошибка в мониторинге: {e}", logging.ERROR)
-                await asyncio.sleep(2) 
     
     async def _safe_quit_driver(self):
         """Безопасное закрытие драйвера"""
@@ -98,8 +70,7 @@ class Core:
                 self.driver = None
                 self.is_running = False
                 self._stop_requested = False
-                self.current_task = None
-    
+        
     async def stop_main_process(self):
         """Остановка процесса - безопасная для вызова из GUI"""
         if not self.is_running:
@@ -108,37 +79,4 @@ class Core:
         
         self._stop_requested = True
         await self.log("Запрошена остановка процесса...", logging.INFO)
-        
-        if self.current_task and not self.current_task.done():
-            self.current_task.cancel()
-        
         await asyncio.sleep(0.5)
-    
-    def stop_main_process_sync(self):
-        """Синхронная версия остановки для вызова из GUI"""
-        if not self.is_running:
-            return
-        
-        self._stop_requested = True
-        
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.create_task(self.stop_main_process())
-        except:
-            asyncio.run(self.stop_main_process())
-    
-    def force_stop(self):
-        """Принудительная остановка для экстренных случаев"""
-        if self.driver:
-            try:
-                self.driver.quit()
-            except:
-                pass
-            finally:
-                self.driver = None
-                self.is_running = False
-                self._stop_requested = False
-                if self.current_task:
-                    self.current_task.cancel()
-                    self.current_task = None
