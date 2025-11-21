@@ -12,6 +12,7 @@ else:
 sys.path.insert(0, base_path)
 sys.path.insert(0, os.path.join(base_path, 'core'))
 sys.path.insert(0, os.path.join(base_path, 'gui'))
+sys.path.insert(0, os.path.join(base_path, 'service'))
 
 def setup_async():
     """Настройка асинхронного event loop для tkinter"""
@@ -21,21 +22,56 @@ def setup_async():
     except Exception as e:
         print(f"Ошибка настройки async: {e}")
 
-def main():
+def show_auth_form():
+    """Показывает форму авторизации и возвращает результат"""
+    from gui.autorform import AutorForm
+    
+    auth_win = tk.Tk()
+    auth_win.title("Авторизация")
+    
+    # Центрируем окно
+    def center_window(window, width, height):
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+        window.geometry(f'{width}x{height}+{x}+{y}')
+    
+    center_window(auth_win, 400, 350)
+    
+    # Переменная для хранения результата авторизации
+    auth_result = {"success": False}
+    
+    # Создаем форму авторизации
+    auth_form = AutorForm(auth_win, None)
+    
+    def on_successful_login():
+        """Вызывается при успешной авторизации"""
+        auth_result["success"] = True
+        auth_win.quit()  # Выходим из mainloop
+        auth_win.destroy()  # Закрываем окно
+    
+    # Устанавливаем callback для успешной авторизации
+    auth_form.on_login_success = on_successful_login
+    
+    # Запускаем главный цикл для окна авторизации
+    auth_win.mainloop()
+    
+    return auth_result["success"]
+
+def show_main_app():
+    """Показывает основное приложение"""
     try:
-        print("🚀 Запуск AutoclickerApp...")
-        
-        # Настраиваем async loop ДО импорта модулей
-        setup_async()
+        print("🚀 Запуск основного приложения...")
         
         from emitter import global_emitter
         from core.core_main import Core
         from gui.app_gui import AppGUI
         
         root = tk.Tk()
-        root.title("AutoclickerApp")
+        root.title("AutoclickerApp - Авторизован")
         
-        # Создаем core синхронно
+        # Создаем core
         core = Core()
         
         # Создаем GUI
@@ -64,6 +100,36 @@ def main():
             pass
             
         print("✅ Приложение завершено")
+        
+    except Exception as e:
+        print(f"❌ Критическая ошибка: {e}")
+        import traceback
+        traceback.print_exc()
+        input("Нажмите Enter для выхода...")
+
+def main():
+    try:
+        print("🚀 Запуск AutoclickerApp...")
+        
+        # Настраиваем async loop
+        setup_async()
+        
+        # Проверяем авторизацию
+        from service.auth_manager import auth_manager
+        
+        if auth_manager.check_auth():
+            print("✅ Пользователь уже авторизован")
+            show_main_app()
+        else:
+            print("🔐 Требуется авторизация")
+            # Показываем форму авторизации
+            auth_success = show_auth_form()
+            
+            if auth_success:
+                print("✅ Авторизация успешна, запускаем основное приложение")
+                show_main_app()
+            else:
+                print("❌ Авторизация не удалась")
         
     except Exception as e:
         print(f"❌ Критическая ошибка: {e}")

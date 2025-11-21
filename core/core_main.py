@@ -2,13 +2,9 @@ import asyncio
 import undetected_chromedriver as uc  
 import logging
 import os
-import getpass
-import time
 import sys
 import psutil
-import tempfile
-import subprocess
-from selenium.common import exceptions
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -20,270 +16,80 @@ class Core:
         self.driver = None
         self.is_running = False
         self._stop_requested = False
-        self._browser_processes = []
         self._current_task = None
         
-        # Для EXE определяем базовый путь
         if getattr(sys, 'frozen', False):
             self.base_path = sys._MEIPASS
         else:
             self.base_path = os.path.dirname(os.path.abspath(__file__))
-        
-        # Создаем свой event loop для EXE
-        try:
-            self.loop = asyncio.get_event_loop()
-        except:
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
     
     def log_sync(self, message, level=logging.INFO):
         """Синхронное логирование"""
         try:
             self.emitter.emit_log(message, level)
         except Exception as e:
-            print(f"LOG ERROR: {e} - {message}")
+            print(f"LOG: {message}")
     
     async def log(self, message, level=logging.INFO):
         """Асинхронное логирование"""
         self.log_sync(message, level)
     
-    def _get_system_info(self):
-        """Диагностика системы"""
-        info = []
-        info.append(f"Python: {sys.version}")
-        info.append(f"Platform: {sys.platform}")
-        info.append(f"Current dir: {os.getcwd()}")
-        info.append(f"Username: {getpass.getuser()}")
-        info.append(f"Base path: {self.base_path}")
-        info.append(f"Frozen: {getattr(sys, 'frozen', False)}")
-        return "\n".join(info)
-    
-    def _get_browser_version(self, browser_path):
-        """Получает версию браузера"""
+    def _kill_chrome_processes(self):
+        """Завершает процессы Chrome и Chromedriver"""
         try:
-            result = subprocess.run([browser_path, '--version'], 
-                                  capture_output=True, text=True, timeout=5)
-            return result.stdout.strip()
-        except:
-            return "unknown"
-    
-    def _get_browser_paths(self):
-        """Возвращает пути к различным браузерам"""
-        username = getpass.getuser()
-        
-        browser_paths = {
-            'yandex': [
-                rf"C:\Users\{username}\AppData\Local\Yandex\YandexBrowser\Application\browser.exe",
-                r"C:\Program Files (x86)\Yandex\YandexBrowser\Application\browser.exe",
-            ],
-            'chrome': [
-                rf"C:\Users\{username}\AppData\Local\Google\Chrome\Application\chrome.exe",
-                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            ],
-            'edge': [
-                r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-                r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-            ]
-        }
-        
-        available_browsers = {}
-        
-        for browser_name, paths in browser_paths.items():
-            for path in paths:
-                if os.path.exists(path):
-                    available_browsers[browser_name] = path
-                    break
-        
-        return available_browsers
-    
-    async def _create_driver_with_version_matching(self):
-        """Создает драйвер с автоматическим подбором версии"""
-        try:
-            await self.log("🔍 Ищем подходящую версию ChromeDriver...", logging.INFO)
+            processes_to_kill = ['chrome', 'chromedriver']
             
-            # Получаем информацию о системе
-            system_info = self._get_system_info()
-            await self.log(f"Диагностика системы:\n{system_info}", logging.INFO)
+            for process in psutil.process_iter(['pid', 'name']):
+                try:
+                    process_name = process.info['name'].lower()
+                    if any(browser in process_name for browser in processes_to_kill):
+                        process.terminate()
+                        print(f"Завершен процесс: {process.info['name']} (PID: {process.info['pid']})")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
             
-            # Получаем браузеры
-            available_browsers = self._get_browser_paths()
+            time.sleep(2)  # Даем время для завершения
             
-            await self.log("Доступные браузеры:", logging.INFO)
-            for browser, path in available_browsers.items():
-                version = self._get_browser_version(path)
-                await self.log(f"  {browser}: {path} (версия: {version})", logging.INFO)
-            
-            if not available_browsers:
-                await self.log("❌ Не найдены установленные браузеры", logging.ERROR)
-                raise Exception("Не найдены установленные браузеры")
-            
-            # Пробуем разные стратегии запуска
-            strategies = [
-                self._try_ultra_simple,
-                self._try_browser_specific,
-                self._try_fallback
-            ]
-            
-            for strategy in strategies:
-                driver = await strategy(available_browsers)
-                if driver:
-                    return driver
-            
-            raise Exception("Все стратегии запуска не сработали")
-                
         except Exception as e:
-            await self.log(f"❌ Критическая ошибка в диагностике: {e}", logging.ERROR)
-            raise
+            print(f"Ошибка при завершении процессов: {e}")
     
-    async def _try_ultra_simple(self, available_browsers):
-        """Пробует самый простой способ"""
+    def _create_chrome_driver(self):
+        """Создает драйвер Chrome - простой и надежный способ"""
         try:
-            await self.log("🔄 Стратегия 1: Ultra-simple запуск...", logging.INFO)
+            print("🔄 Запускаем Chrome...")
             
+            # Убиваем старые процессы
+            self._kill_chrome_processes()
+            
+            # Простые настройки для Chrome
             options = uc.ChromeOptions()
+            
+            # Минимальный набор аргументов для стабильности
             options.add_argument("--no-first-run")
             options.add_argument("--no-default-browser-check")
             options.add_argument("--disable-extensions")
             options.add_argument("--disable-blink-features=AutomationControlled")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--remote-debugging-port=0")
             
-            # Ключевое: заставляем undetected_chromedriver подобрать правильную версию
+            # Создаем драйвер с автоподбором версии
             driver = uc.Chrome(
                 options=options,
-                headless=False,
-                use_subprocess=True,
-                version_main=None,  # Автоматический подбор версии
-                driver_executable_path=None  # Автоматический поиск драйвера
+                headless=False
             )
             
-            await self.log("✅ Ultra-simple стратегия сработала!", logging.INFO)
+            print("✅ Chrome успешно запущен!")
             return driver
             
         except Exception as e:
-            await self.log(f"❌ Ultra-simple не сработал: {str(e)[:200]}", logging.WARNING)
+            print(f"❌ Ошибка запуска Chrome: {e}")
             return None
-    
-    async def _try_browser_specific(self, available_browsers):
-        """Пробует конкретные браузеры"""
-        browser_priority = ['chrome', 'edge', 'yandex']
-        
-        for browser_name in browser_priority:
-            if browser_name not in available_browsers:
-                continue
-                
-            browser_path = available_browsers[browser_name]
-            
-            try:
-                await self.log(f"🔄 Стратегия 2: Запуск {browser_name}...", logging.INFO)
-                
-                options = uc.ChromeOptions()
-                options.binary_location = browser_path
-                options.add_argument("--no-first-run")
-                options.add_argument("--no-default-browser-check")
-                options.add_argument("--disable-extensions")
-                options.add_argument("--remote-debugging-port=0")
-                
-                driver = uc.Chrome(
-                    options=options,
-                    headless=False,
-                    use_subprocess=True,
-                    version_main=None  # Автоподбор версии
-                )
-                
-                await self.log(f"✅ {browser_name} запущен успешно!", logging.INFO)
-                return driver
-                
-            except Exception as e:
-                await self.log(f"❌ {browser_name} не сработал: {str(e)[:200]}", logging.WARNING)
-                continue
-        
-        return None
-    
-    async def _try_fallback(self, available_browsers):
-        """Последняя попытка с разными настройками"""
-        try:
-            await self.log("🔄 Стратегия 3: Fallback запуск...", logging.INFO)
-            
-            # Пробуем разные порты и настройки
-            for use_subprocess in [True, False]:
-                try:
-                    options = uc.ChromeOptions()
-                    options.add_argument("--no-first-run")
-                    options.add_argument("--no-default-browser-check")
-                    options.add_argument("--remote-debugging-port=0")
-                    
-                    driver = uc.Chrome(
-                        options=options,
-                        headless=False,
-                        use_subprocess=use_subprocess,
-                        version_main=None
-                    )
-                    
-                    await self.log(f"✅ Fallback с use_subprocess={use_subprocess} сработал!", logging.INFO)
-                    return driver
-                    
-                except Exception as e:
-                    await self.log(f"❌ Fallback с use_subprocess={use_subprocess} не сработал: {str(e)[:200]}", logging.WARNING)
-                    continue
-            
-            return None
-            
-        except Exception as e:
-            await self.log(f"❌ Fallback стратегия не сработала: {e}", logging.WARNING)
-            return None
-    
-    def _track_browser_process(self):
-        """Отслеживает процессы браузера"""
-        try:
-            if self.driver and hasattr(self.driver, 'service'):
-                service = self.driver.service
-                if hasattr(service, 'process') and service.process:
-                    self._browser_processes.append(service.process.pid)
-        except:
-            pass
-    
-    async def _kill_browser_processes(self):
-        """Завершает процессы браузера"""
-        browsers_to_kill = ['chrome', 'chromedriver', 'msedge', 'yandex']
-        
-        for process in psutil.process_iter(['pid', 'name']):
-            try:
-                process_name = process.info['name'].lower()
-                if any(browser in process_name for browser in browsers_to_kill):
-                    process.terminate()
-                    await asyncio.sleep(0.1)
-                    self.log_sync(f"Завершен процесс: {process.info['name']} (PID: {process.info['pid']})", logging.INFO)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        
-        self._browser_processes.clear()
-        await asyncio.sleep(1)  # Даем время для завершения процессов
-    
-    async def _create_driver_safe(self):
-        """Безопасное создание драйвера"""
-        try:
-            await self._kill_browser_processes()
-            await asyncio.sleep(2)  # Увеличиваем паузу
-            
-            driver = await self._create_driver_with_version_matching()
-            self._track_browser_process()
-            
-            return driver
-            
-        except Exception as e:
-            await self.log(f"❌ Ошибка создания драйвера: {e}", logging.ERROR)
-            await self._kill_browser_processes()
-            raise
     
     async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
-                            classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", 
-                            classModal="MuiPaper-root"):
+                            classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
+                            classModal="MuiDrawer-paperAnchorRight"):
         """Запуск основного процесса"""
         
         if self.is_running:
-            await self.log("⚠️ Процесс уже запущен! Останавливаем предыдущий...", logging.WARNING)
+            await self.log("⚠️ Процесс уже запущен! Останавливаем предыдущий...")
             await self.stop_main_process()
             await asyncio.sleep(2)
 
@@ -291,10 +97,17 @@ class Core:
         self.is_running = True
 
         try:
-            # Создаем драйвер
-            self.driver = await self._create_driver_safe()
+            await self.log("🚀 Начинаем основной процесс...")
             
-            await self.log("🚀 Драйвер создан, загружаем URL...", logging.INFO)
+            # Создаем драйвер Chrome
+            self.driver = self._create_chrome_driver()
+            
+            if not self.driver:
+                await self.log("❌ Не удалось запустить Chrome")
+                self.is_running = False
+                return
+            
+            await self.log("🚀 Chrome запущен, загружаем страницу...")
 
             # Загружаем страницу
             try:
@@ -305,10 +118,10 @@ class Core:
                     lambda driver: driver.execute_script("return document.readyState") == "complete"
                 )
                 
-                await self.log("✅ Страница загружена", logging.INFO)
+                await self.log("✅ Страница загружена")
                 
             except Exception as e:
-                await self.log(f"❌ Ошибка загрузки URL: {e}", logging.ERROR)
+                await self.log(f"❌ Ошибка загрузки страницы: {e}")
                 await self._safe_quit_driver()
                 return
             
@@ -333,11 +146,13 @@ class Core:
             try:
                 await self._current_task
             except asyncio.CancelledError:
-                await self.log("Задача мониторинга отменена", logging.INFO)
+                await self.log("Задача мониторинга отменена")
+            except Exception as e:
+                await self.log(f"❌ Ошибка в задаче мониторинга: {e}")
                 
         except Exception as e:
-            error_msg = f"❌ Ошибка в основном процессе: {e}"
-            await self.log(error_msg, logging.ERROR)
+            error_msg = f"❌ Критическая ошибка: {e}"
+            await self.log(error_msg)
             
         finally:
             if not self._stop_requested:
@@ -345,41 +160,44 @@ class Core:
     
     async def _safe_quit_driver(self):
         """Безопасное закрытие драйвера"""
-        # Отменяем задачу
-        if self._current_task and not self._current_task.done():
-            self._current_task.cancel()
-            try:
-                await self._current_task
-            except asyncio.CancelledError:
-                pass
-        
-        # Закрываем драйвер
-        if self.driver:
-            try:
-                self.driver.quit()
-                await self.log("✅ Браузер закрыт", logging.INFO)
-            except Exception as e:
-                await self.log(f"⚠️ Ошибка при закрытии браузера: {e}", logging.WARNING)
+        try:
+            # Отменяем задачу
+            if self._current_task and not self._current_task.done():
+                self._current_task.cancel()
+                try:
+                    await self._current_task
+                except (asyncio.CancelledError, Exception):
+                    pass
             
-            self.driver = None
-        
-        # Убиваем процессы
-        await self._kill_browser_processes()
-        
-        self.is_running = False
-        self._stop_requested = False
-        self._current_task = None
+            # Закрываем драйвер
+            if self.driver:
+                try:
+                    self.driver.quit()
+                    await self.log("✅ Chrome закрыт")
+                except Exception as e:
+                    await self.log(f"⚠️ Ошибка при закрытии Chrome: {e}")
+                self.driver = None
+            
+            # Убиваем процессы
+            self._kill_chrome_processes()
+            
+        except Exception as e:
+            await self.log(f"⚠️ Ошибка при закрытии: {e}")
+        finally:
+            self.is_running = False
+            self._stop_requested = False
+            self._current_task = None
     
     async def stop_main_process(self):
         """Остановка процесса"""
         if not self.is_running:
-            await self.log("Процесс не запущен", logging.WARNING)
+            await self.log("Процесс не запущен")
             return
         
         self._stop_requested = True
-        await self.log("🛑 Запрошена остановка процесса...", logging.INFO)
+        await self.log("🛑 Останавливаем процесс...")
         await self._safe_quit_driver()
-        await self.log("✅ Процесс остановлен", logging.INFO)
+        await self.log("✅ Процесс остановлен")
     
     def is_process_running(self):
         return self.is_running and not self._stop_requested

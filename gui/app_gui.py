@@ -6,7 +6,7 @@ import logging
 from tkinter import font
 from tkinter import scrolledtext
 from emitter import global_emitter
-
+from service.auth_manager import auth_manager
 class RoundedFrame(tk.Canvas):
     def __init__(self, master, radius=20, color="#696969", **kwargs):
         super().__init__(master, highlightthickness=0, bg=master.cget("bg"), **kwargs)
@@ -103,6 +103,9 @@ class AppGUI:
         self.log_handler = LogTextHandler(self.console_text)
     
     def setup_ui(self):
+        if not auth_manager.check_auth():
+            self.show_auth_warning()
+            return
         self.root.title("KLIK KLAK")
         self.root.geometry("700x500")
         self.root.configure(bg = "#193750")
@@ -203,7 +206,26 @@ class AppGUI:
         logging.info("Приложение запущено")
         logging.warning("Это тестовое предупреждение")
         logging.error("Это тестовая ошибка")
-    
+    def show_auth_warning(self):
+        """Показывает предупреждение об отсутствии авторизации"""
+        warning_frame = tk.Frame(self.root, bg='#ffebee', padx=20, pady=20)
+        warning_frame.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(
+            warning_frame, 
+            text="❌ Не авторизован", 
+            font=("Arial", 16, "bold"),
+            fg="#d32f2f",
+            bg='#ffebee'
+        ).pack(pady=10)
+        
+        tk.Label(
+            warning_frame,
+            text="Для использования приложения требуется авторизация",
+            font=("Arial", 12),
+            fg="#666",
+            bg='#ffebee'
+        ).pack(pady=5)
     def write_to_console(self, message, level=logging.INFO): 
         """Добавляет текст в консоль с указанным уровнем"""                          
         self.console_text.configure(state='normal')
