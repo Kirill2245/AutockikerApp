@@ -47,10 +47,6 @@ class Core:
         """Асинхронное логирование"""
         self.log_sync(message, level)
     
-    async def emit_log(self, message, level=logging.INFO):
-        """Алиас для log для совместимости с CoreLogic"""
-        await self.log(message, level)
-    
     def _get_system_info(self):
         """Диагностика системы"""
         info = []
@@ -61,6 +57,15 @@ class Core:
         info.append(f"Base path: {self.base_path}")
         info.append(f"Frozen: {getattr(sys, 'frozen', False)}")
         return "\n".join(info)
+    
+    def _get_browser_version(self, browser_path):
+        """Получает версию браузера"""
+        try:
+            result = subprocess.run([browser_path, '--version'], 
+                                  capture_output=True, text=True, timeout=5)
+            return result.stdout.strip()
+        except:
+            return "unknown"
     
     def _get_browser_paths(self):
         """Возвращает пути к различным браузерам"""
@@ -91,38 +96,12 @@ class Core:
         
         return available_browsers
     
-    async def _create_driver_simple(self):
-        """Простой запуск драйвера для EXE"""
+    async def _create_driver_with_version_matching(self):
+        """Создает драйвер с автоматическим подбором версии"""
         try:
-            await self.log("Пробуем simple запуск...", logging.INFO)
+            await self.log("🔍 Ищем подходящую версию ChromeDriver...", logging.INFO)
             
-            options = uc.ChromeOptions()
-            options.add_argument("--no-first-run")
-            options.add_argument("--no-default-browser-check")
-            options.add_argument("--disable-extensions")
-            options.add_argument("--disable-blink-features=AutomationControlled")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--no-sandbox")
-            
-            # Для EXE файла важно указать правильную рабочую директорию
-            driver = uc.Chrome(
-                options=options,
-                headless=False,
-                use_subprocess=True,  # Для EXE лучше True
-                version_main=None
-            )
-            
-            await self.log("✅ Simple драйвер запущен", logging.INFO)
-            return driver
-            
-        except Exception as e:
-            await self.log(f"❌ Simple не сработал: {e}", logging.WARNING)
-            return None
-    
-    async def _create_driver_with_diagnostic(self):
-        """Создает драйвер с диагностикой"""
-        try:
-            # Диагностика системы
+            # Получаем информацию о системе
             system_info = self._get_system_info()
             await self.log(f"Диагностика системы:\n{system_info}", logging.INFO)
             
@@ -131,54 +110,129 @@ class Core:
             
             await self.log("Доступные браузеры:", logging.INFO)
             for browser, path in available_browsers.items():
-                await self.log(f"  {browser}: {path}", logging.INFO)
+                version = self._get_browser_version(path)
+                await self.log(f"  {browser}: {path} (версия: {version})", logging.INFO)
             
             if not available_browsers:
                 await self.log("❌ Не найдены установленные браузеры", logging.ERROR)
                 raise Exception("Не найдены установленные браузеры")
             
-            # Пробуем простой запуск
-            driver = await self._create_driver_simple()
-            if driver:
-                return driver
+            # Пробуем разные стратегии запуска
+            strategies = [
+                self._try_ultra_simple,
+                self._try_browser_specific,
+                self._try_fallback
+            ]
             
-            # Пробуем конкретные браузеры
-            for browser_name, browser_path in available_browsers.items():
-                try:
-                    await self.log(f"Пробуем запустить {browser_name}...", logging.INFO)
-                    
-                    options = uc.ChromeOptions()
-                    options.binary_location = browser_path
-                    options.add_argument("--no-first-run")
-                    options.add_argument("--no-default-browser-check")
-                    
-                    driver = uc.Chrome(
-                        options=options,
-                        headless=False,
-                        use_subprocess=True,
-                        version_main=None
-                    )
-                    
-                    await self.log(f"✅ {browser_name} запущен", logging.INFO)
+            for strategy in strategies:
+                driver = await strategy(available_browsers)
+                if driver:
                     return driver
-                    
-                except Exception as e:
-                    await self.log(f"❌ {browser_name} не сработал: {str(e)[:100]}", logging.WARNING)
-                    continue
             
-            # Последняя попытка - без указания браузера
-            await self.log("Пробуем запуск без указания браузера...", logging.WARNING)
-            try:
-                driver = uc.Chrome(headless=False, use_subprocess=True)
-                await self.log("✅ Браузер запущен без указания пути", logging.INFO)
-                return driver
-            except Exception as e:
-                await self.log(f"❌ Не удалось запустить браузер: {e}", logging.ERROR)
-                raise
+            raise Exception("Все стратегии запуска не сработали")
                 
         except Exception as e:
             await self.log(f"❌ Критическая ошибка в диагностике: {e}", logging.ERROR)
             raise
+    
+    async def _try_ultra_simple(self, available_browsers):
+        """Пробует самый простой способ"""
+        try:
+            await self.log("🔄 Стратегия 1: Ultra-simple запуск...", logging.INFO)
+            
+            options = uc.ChromeOptions()
+            options.add_argument("--no-first-run")
+            options.add_argument("--no-default-browser-check")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--remote-debugging-port=0")
+            
+            # Ключевое: заставляем undetected_chromedriver подобрать правильную версию
+            driver = uc.Chrome(
+                options=options,
+                headless=False,
+                use_subprocess=True,
+                version_main=None,  # Автоматический подбор версии
+                driver_executable_path=None  # Автоматический поиск драйвера
+            )
+            
+            await self.log("✅ Ultra-simple стратегия сработала!", logging.INFO)
+            return driver
+            
+        except Exception as e:
+            await self.log(f"❌ Ultra-simple не сработал: {str(e)[:200]}", logging.WARNING)
+            return None
+    
+    async def _try_browser_specific(self, available_browsers):
+        """Пробует конкретные браузеры"""
+        browser_priority = ['chrome', 'edge', 'yandex']
+        
+        for browser_name in browser_priority:
+            if browser_name not in available_browsers:
+                continue
+                
+            browser_path = available_browsers[browser_name]
+            
+            try:
+                await self.log(f"🔄 Стратегия 2: Запуск {browser_name}...", logging.INFO)
+                
+                options = uc.ChromeOptions()
+                options.binary_location = browser_path
+                options.add_argument("--no-first-run")
+                options.add_argument("--no-default-browser-check")
+                options.add_argument("--disable-extensions")
+                options.add_argument("--remote-debugging-port=0")
+                
+                driver = uc.Chrome(
+                    options=options,
+                    headless=False,
+                    use_subprocess=True,
+                    version_main=None  # Автоподбор версии
+                )
+                
+                await self.log(f"✅ {browser_name} запущен успешно!", logging.INFO)
+                return driver
+                
+            except Exception as e:
+                await self.log(f"❌ {browser_name} не сработал: {str(e)[:200]}", logging.WARNING)
+                continue
+        
+        return None
+    
+    async def _try_fallback(self, available_browsers):
+        """Последняя попытка с разными настройками"""
+        try:
+            await self.log("🔄 Стратегия 3: Fallback запуск...", logging.INFO)
+            
+            # Пробуем разные порты и настройки
+            for use_subprocess in [True, False]:
+                try:
+                    options = uc.ChromeOptions()
+                    options.add_argument("--no-first-run")
+                    options.add_argument("--no-default-browser-check")
+                    options.add_argument("--remote-debugging-port=0")
+                    
+                    driver = uc.Chrome(
+                        options=options,
+                        headless=False,
+                        use_subprocess=use_subprocess,
+                        version_main=None
+                    )
+                    
+                    await self.log(f"✅ Fallback с use_subprocess={use_subprocess} сработал!", logging.INFO)
+                    return driver
+                    
+                except Exception as e:
+                    await self.log(f"❌ Fallback с use_subprocess={use_subprocess} не сработал: {str(e)[:200]}", logging.WARNING)
+                    continue
+            
+            return None
+            
+        except Exception as e:
+            await self.log(f"❌ Fallback стратегия не сработала: {e}", logging.WARNING)
+            return None
     
     def _track_browser_process(self):
         """Отслеживает процессы браузера"""
@@ -205,14 +259,15 @@ class Core:
                 continue
         
         self._browser_processes.clear()
+        await asyncio.sleep(1)  # Даем время для завершения процессов
     
     async def _create_driver_safe(self):
         """Безопасное создание драйвера"""
         try:
             await self._kill_browser_processes()
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)  # Увеличиваем паузу
             
-            driver = await self._create_driver_with_diagnostic()
+            driver = await self._create_driver_with_version_matching()
             self._track_browser_process()
             
             return driver
