@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['c:\\Users\\Kirill\\Desktop\\.vs\\Python\\Autoclicker App\\main.py'],
+    ['c:\\Users\\Kirill\\Desktop\\.vs\\Phyton\\AutockikerApp\\main.py'],
     pathex=[],
     binaries=[],
     datas=[('core', 'core'), ('gui', 'gui'), ('emitter.py', '.'), ('assets/2.ico', 'assets')],
