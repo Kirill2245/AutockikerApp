@@ -4,6 +4,7 @@ import logging
 import os
 import getpass
 import time
+import sys
 from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,8 +23,17 @@ class Core:
     async def log(self, message, level=logging.INFO):
         self.emitter.emit_log(message, level)
     
+    def _get_system_info(self):
+        """Диагностика системы"""
+        info = []
+        info.append(f"Python: {sys.version}")
+        info.append(f"Platform: {sys.platform}")
+        info.append(f"Current dir: {os.getcwd()}")
+        info.append(f"Username: {getpass.getuser()}")
+        return "\n".join(info)
+    
     def _get_browser_paths(self):
-        """Возвращает пути к различным браузерам"""
+        """Возвращает пути к различным браузерам с диагностикой"""
         username = getpass.getuser()
         
         browser_paths = {
@@ -40,122 +50,162 @@ class Core:
             'edge': [
                 r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
                 r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            ],
+            'firefox': [
+                rf"C:\Program Files\Mozilla Firefox\firefox.exe",
+                rf"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
             ]
         }
         
         available_browsers = {}
+        browser_versions = {}
+        
         for browser_name, paths in browser_paths.items():
             for path in paths:
                 if os.path.exists(path):
                     available_browsers[browser_name] = path
+                    # Пытаемся получить версию
+                    try:
+                        import subprocess
+                        result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=5)
+                        browser_versions[browser_name] = result.stdout.strip()
+                    except:
+                        browser_versions[browser_name] = "unknown"
                     break
         
-        return available_browsers
+        return available_browsers, browser_versions
     
-    def _create_browser_options(self, browser_type='yandex'):
-        """Создает настройки для браузера - УПРОЩЕННАЯ ВЕРСИЯ"""
-        options = uc.ChromeOptions()
-
-        options.add_argument("--no-first-run")
-        options.add_argument("--no-default-browser-check")
-        options.add_argument("--disable-extensions")
-        options.add_argument("--disable-plugins")
-        
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--remote-debugging-port=0")
-        
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        
-        return options
-    
-    async def _create_driver_simple(self, browser_name, browser_path):
-        """Простой запуск драйвера без сложных опций"""
+    async def _create_driver_ultra_simple(self):
+        """Самый простой запуск драйвера"""
         try:
-            await self.log(f"Запуск {browser_name}...", logging.INFO)
+            await self.log("Пробуем ultra-simple запуск...", logging.INFO)
             
+            # Минимальные опции
             options = uc.ChromeOptions()
-            options.binary_location = browser_path
-            
             options.add_argument("--no-first-run")
             options.add_argument("--no-default-browser-check")
-            options.add_argument("--disable-extensions")
             
+            # Пробуем разные версии драйвера
             driver = uc.Chrome(
                 options=options,
-                use_subprocess=True,
-                headless=False
+                headless=False,
+                use_subprocess=False,  # Может помочь на некоторых системах
+                version_main=None  # Автовыбор версии
             )
             
-            await self.log(f"✅ {browser_name} успешно запущен", logging.INFO)
+            await self.log("✅ Ultra-simple драйвер запущен", logging.INFO)
             return driver
             
         except Exception as e:
-            await self.log(f"❌ Ошибка при запуске {browser_name}: {str(e)[:200]}", logging.ERROR)
+            await self.log(f"❌ Ultra-simple не сработал: {e}", logging.WARNING)
             return None
-    
-    async def _create_driver_with_fallback(self, max_retries=2):
-        """Создает драйвер с fallback браузерами - УПРОЩЕННАЯ ВЕРСИЯ"""
-        available_browsers = self._get_browser_paths()
         
-        if not available_browsers:
-            raise Exception("Не найдены установленные браузеры")
-        
-        await self.log(f"Доступные браузеры: {', '.join(available_browsers.keys())}", logging.INFO)
-        
-        browser_priority = ['yandex', 'chrome', 'edge']
-        
-        for browser_name in browser_priority:
-            if browser_name not in available_browsers:
-                continue
-                
-            browser_path = available_browsers[browser_name]
+    async def _create_driver_with_diagnostic(self):
+        """Создает драйвер с полной диагностикой"""
+        try:
+            # Сначала получаем информацию о системе
+            system_info = self._get_system_info()
+            await self.log(f"Диагностика системы:\n{system_info}", logging.INFO)
             
-            driver = await self._create_driver_simple(browser_name, browser_path)
+            # Получаем информацию о браузерах
+            available_browsers, browser_versions = self._get_browser_paths()
+            
+            await self.log("Доступные браузеры:", logging.INFO)
+            for browser, path in available_browsers.items():
+                version = browser_versions.get(browser, "unknown")
+                await self.log(f"  {browser}: {path} (версия: {version})", logging.INFO)
+            
+            if not available_browsers:
+                await self.log("❌ Не найдены установленные браузеры", logging.ERROR)
+                
+                # Пробуем установить Chrome автоматически
+                await self.log("Пробуем установить Chrome...", logging.WARNING)
+                try:
+                    from webdriver_manager.chrome import ChromeDriverManager
+                    from selenium.webdriver.chrome.service import Service
+                    
+                    service = Service(ChromeDriverManager().install())
+                    driver = uc.Chrome(service=service, headless=False)
+                    await self.log("✅ Chrome установлен и запущен", logging.INFO)
+                    return driver
+                except Exception as e:
+                    await self.log(f"❌ Не удалось установить Chrome: {e}", logging.ERROR)
+                    raise Exception("Не найдены браузеры и не удалось установить Chrome")
+            
+            # Пробуем ultra-simple подход сначала
+            driver = await self._create_driver_ultra_simple()
             if driver:
                 return driver
-        
-        await self.log("Пробуем запуск без указания браузера...", logging.WARNING)
-        try:
-            driver = uc.Chrome(headless=False)
-            await self.log("✅ Браузер запущен без указания пути", logging.INFO)
-            return driver
-        except Exception as e:
-            await self.log(f"❌ Не удалось запустить браузер: {e}", logging.ERROR)
-            raise Exception(f"Не удалось запустить ни один браузер")
-    
-    async def _load_url_safely(self, url):
-        """Безопасная загрузка URL с повторными попытками"""
-        for attempt in range(3):
-            try:
-                await self.log(f"Попытка {attempt + 1} загрузки URL: {url}", logging.INFO)
-                
-                self.driver.set_page_load_timeout(30)
-                
-                self.driver.get(url)
-                
-                WebDriverWait(self.driver, 15).until(
-                    lambda driver: driver.execute_script("return document.readyState") == "complete"
-                )
-                
-                current_url = self.driver.current_url
-                await self.log(f"URL успешно загружен: {current_url}", logging.INFO)
-                
-                return True
-                
-            except exceptions.TimeoutException:
-                await self.log(f"Таймаут загрузки страницы (попытка {attempt + 1})", logging.WARNING)
-                if attempt < 2:
-                    await asyncio.sleep(2)
+            
+            # Если ultra-simple не сработал, пробуем конкретные браузеры
+            browser_priority = ['chrome', 'edge', 'yandex', 'firefox']
+            
+            for browser_name in browser_priority:
+                if browser_name not in available_browsers:
+                    continue
                     
+                browser_path = available_browsers[browser_name]
+                
+                try:
+                    await self.log(f"Пробуем запустить {browser_name}...", logging.INFO)
+                    
+                    options = uc.ChromeOptions()
+                    options.binary_location = browser_path
+                    
+                    # Минимальные опции для стабильности
+                    options.add_argument("--no-first-run")
+                    options.add_argument("--no-default-browser-check")
+                    options.add_argument("--disable-extensions")
+                    options.add_argument("--disable-blink-features=AutomationControlled")
+                    
+                    # Пробуем разные комбинации параметров
+                    for use_subprocess in [False, True]:
+                        try:
+                            driver = uc.Chrome(
+                                options=options,
+                                headless=False,
+                                use_subprocess=use_subprocess,
+                                version_main=None
+                            )
+                            
+                            await self.log(f"✅ {browser_name} запущен (use_subprocess={use_subprocess})", logging.INFO)
+                            return driver
+                            
+                        except Exception as e:
+                            await self.log(f"❌ {browser_name} с use_subprocess={use_subprocess} не сработал: {str(e)[:100]}", logging.WARNING)
+                            continue
+                            
+                except Exception as e:
+                    await self.log(f"❌ Ошибка при работе с {browser_name}: {e}", logging.WARNING)
+                    continue
+            
+            # Если ничего не сработало, пробуем без указания браузера
+            await self.log("Пробуем запуск без указания браузера...", logging.WARNING)
+            try:
+                driver = uc.Chrome(headless=False)
+                await self.log("✅ Браузер запущен без указания пути", logging.INFO)
+                return driver
             except Exception as e:
-                await self.log(f"Ошибка загрузки URL (попытка {attempt + 1}): {e}", logging.WARNING)
-                if attempt < 2:
-                    await asyncio.sleep(2)
-        
-        return False
-    
+                await self.log(f"❌ Не удалось запустить браузер: {e}", logging.ERROR)
+            
+            # Финальная попытка с webdriver-manager
+            try:
+                await self.log("Пробуем с webdriver-manager...", logging.WARNING)
+                from webdriver_manager.chrome import ChromeDriverManager
+                from selenium.webdriver.chrome.service import Service
+                
+                service = Service(ChromeDriverManager().install())
+                driver = uc.Chrome(service=service, headless=False)
+                await self.log("✅ Браузер запущен через webdriver-manager", logging.INFO)
+                return driver
+            except Exception as final_e:
+                await self.log(f"❌ Все попытки не удались: {final_e}", logging.ERROR)
+                raise Exception(f"Не удалось запустить ни один браузер. Доступные: {list(available_browsers.keys())}")
+                
+        except Exception as e:
+            await self.log(f"❌ Критическая ошибка в диагностике: {e}", logging.ERROR)
+            raise
+
     async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
                             classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", 
                             classModal="MuiPaper-root"):
@@ -165,19 +215,18 @@ class Core:
             return
 
         self._stop_requested = False
-        
         self.url = url
         self.timeout = timeout
         self.max_retries = max_retries
         self.classOneClick = classOneClick
         self.classTwoClick = classTwoClick
         self.classModal = classModal
-        
 
         await self._safe_quit_driver()
         
         try:
-            self.driver = await self._create_driver_with_fallback()
+            # Используем улучшенный метод с диагностикой
+            self.driver = await self._create_driver_with_diagnostic()
             self.is_running = True
             
             await self.log("Драйвер создан, начинаем загрузку URL...", logging.INFO)
@@ -189,7 +238,6 @@ class Core:
                 return
             
             await self.log("✅ Страница успешно загружена. Запускаем основную логику...", logging.INFO)
-            
 
             coreLogic = CoreLogic(self.driver, self.max_retries, self.timeout, 
                                 self.classOneClick, self.classTwoClick, 
@@ -212,6 +260,36 @@ class Core:
         finally:
             if not self._stop_requested:
                 await self._safe_quit_driver()
+    
+    async def _load_url_safely(self, url):
+        """Безопасная загрузка URL с повторными попытками"""
+        for attempt in range(3):
+            try:
+                await self.log(f"Попытка {attempt + 1} загрузки URL: {url}", logging.INFO)
+                
+                self.driver.set_page_load_timeout(30)
+                self.driver.get(url)
+                
+                WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.execute_script("return document.readyState") == "complete"
+                )
+                
+                current_url = self.driver.current_url
+                await self.log(f"URL успешно загружен: {current_url}", logging.INFO)
+                
+                return True
+                
+            except exceptions.TimeoutException:
+                await self.log(f"Таймаут загрузки страницы (попытка {attempt + 1})", logging.WARNING)
+                if attempt < 2:
+                    await asyncio.sleep(2)
+                    
+            except Exception as e:
+                await self.log(f"Ошибка загрузки URL (попытка {attempt + 1}): {e}", logging.WARNING)
+                if attempt < 2:
+                    await asyncio.sleep(2)
+        
+        return False
     
     async def _safe_quit_driver(self):
         """Безопасное закрытие драйвера с несколькими попытками"""
@@ -240,17 +318,15 @@ class Core:
                     self._current_task = None
         
     async def stop_main_process(self):
-        """Остановка процесса - безопасная для вызова из GUI"""
+        """Остановка процесса"""
         if not self.is_running:
             await self.log("Процесс не запущен", logging.WARNING)
             return
         
         self._stop_requested = True
         await self.log("Запрошена остановка процесса...", logging.INFO)
-        
         await self._safe_quit_driver()
         await self.log("Процесс остановлен", logging.INFO)
     
     def is_process_running(self):
-        """Проверка статуса процесса"""
         return self.is_running and not self._stop_requested

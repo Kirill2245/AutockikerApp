@@ -1,2 +1,3 @@
 selenium==4.35.0
 undetected_chromedriver==3.5.5
+webdriver-manager==4.0.2
