@@ -6721,6 +6721,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#service.auth_manager">service.auth_manager</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -7926,6 +7927,17 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="detected_device"></a>
+  <a target="code" href="" type="text/plain"><tt>detected_device</tt></a>
+<span class="moduletype">MissingModule</span>  <div class="import">
+imported by:
+    <a href="#service.auth_manager">service.auth_manager</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="difflib"></a>
   <a target="code" href="///C:/Users/Kirill/AppData/Local/Python/pythoncore-3.14-64/Lib/difflib.py" type="text/plain"><tt>difflib</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -8622,8 +8634,8 @@ imported by:
  &#8226;   <a href="#email.policy">email.policy</a>
  &#8226;   <a href="#email.quoprimime">email.quoprimime</a>
  &#8226;   <a href="#email.utils">email.utils</a>
- &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
  &#8226;   <a href="#setuptools._core_metadata">setuptools._core_metadata</a>
  &#8226;   <a href="#setuptools._distutils.dist">setuptools._distutils.dist</a>
  &#8226;   <a href="#setuptools._vendor.importlib_metadata">setuptools._vendor.importlib_metadata</a>
@@ -8805,7 +8817,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#email.charset">email.charset</a>
- &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -9026,7 +9038,7 @@ imports:
 imported by:
     <a href="#email.mime.multipart">email.mime.multipart</a>
  &#8226;   <a href="#email.mime.nonmultipart">email.mime.nonmultipart</a>
- &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -9043,7 +9055,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#gui.app_gui">gui.app_gui</a>
+    <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -9079,7 +9091,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#gui.app_gui">gui.app_gui</a>
+    <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -9204,6 +9216,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
  &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#main.py">main.py</a>
 
@@ -13851,8 +13864,64 @@ imported by:
   <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/__init__.py" type="text/plain"><tt>gui</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
-    <a href="#gui.app_gui">gui.app_gui</a>
+    <a href="#gui.UI">gui.UI</a>
+ &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#gui.autorform">gui.autorform</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="gui.UI"></a>
+  <a target="code" href="-" type="text/plain"><tt>gui.UI</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#gui">gui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.UI.header">gui.UI.header</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="gui.UI.header"></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/header.py" type="text/plain"><tt>gui.UI.header</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#gui.UI">gui.UI</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.app_gui">gui.app_gui</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="gui.UI.ui"></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/ui.py" type="text/plain"><tt>gui.UI.ui</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#emitter">emitter</a>
+ &#8226;   <a href="#gui.UI">gui.UI</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.app_gui">gui.app_gui</a>
 
   </div>
 
@@ -13865,16 +13934,15 @@ imported by:
 imports:
     <a href="#asyncio">asyncio</a>
  &#8226;   <a href="#config">config</a>
- &#8226;   <a href="#email">email</a>
- &#8226;   <a href="#email.encoders">email.encoders</a>
- &#8226;   <a href="#email.mime.base">email.mime.base</a>
- &#8226;   <a href="#email.mime.multipart">email.mime.multipart</a>
- &#8226;   <a href="#email.mime.text">email.mime.text</a>
  &#8226;   <a href="#emitter">emitter</a>
  &#8226;   <a href="#gui">gui</a>
+ &#8226;   <a href="#gui.UI.header">gui.UI.header</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
  &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#modalreport">modalreport</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
  &#8226;   <a href="#smtplib">smtplib</a>
  &#8226;   <a href="#threading">threading</a>
  &#8226;   <a href="#tkinter">tkinter</a>
@@ -15706,6 +15774,7 @@ imported by:
  &#8226;   <a href="#google.auth.transport._mtls_helper">google.auth.transport._mtls_helper</a>
  &#8226;   <a href="#google.auth.transport.requests">google.auth.transport.requests</a>
  &#8226;   <a href="#google.oauth2.credentials">google.oauth2.credentials</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
  &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#hashlib">hashlib</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
@@ -15719,6 +15788,7 @@ imported by:
  &#8226;   <a href="#selenium.webdriver.common.service">selenium.webdriver.common.service</a>
  &#8226;   <a href="#selenium.webdriver.remote.remote_connection">selenium.webdriver.remote.remote_connection</a>
  &#8226;   <a href="#selenium.webdriver.remote.websocket_connection">selenium.webdriver.remote.websocket_connection</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
  &#8226;   <a href="#setuptools._distutils._log">setuptools._distutils._log</a>
  &#8226;   <a href="#setuptools._distutils.cmd">setuptools._distutils.cmd</a>
  &#8226;   <a href="#setuptools._distutils.dist">setuptools._distutils.dist</a>
@@ -15912,6 +15982,17 @@ imported by:
  &#8226;   <a href="#numpy._core.memmap">numpy._core.memmap</a>
  &#8226;   <a href="#pandas.io.common">pandas.io.common</a>
  &#8226;   <a href="#pandas.io.excel._openpyxl">pandas.io.excel._openpyxl</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modalreport"></a>
+  <a target="code" href="" type="text/plain"><tt>modalreport</tt></a>
+<span class="moduletype">MissingModule</span>  <div class="import">
+imported by:
+    <a href="#gui.app_gui">gui.app_gui</a>
 
   </div>
 
@@ -28863,6 +28944,7 @@ imported by:
  &#8226;   <a href="#selenium.webdriver.remote.webdriver">selenium.webdriver.remote.webdriver</a>
  &#8226;   <a href="#selenium.webdriver.remote.webelement">selenium.webdriver.remote.webelement</a>
  &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
  &#8226;   <a href="#setuptools">setuptools</a>
  &#8226;   <a href="#setuptools._core_metadata">setuptools._core_metadata</a>
  &#8226;   <a href="#setuptools._distutils.archive_util">setuptools._distutils.archive_util</a>
@@ -47699,6 +47781,7 @@ imported by:
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#service.auth_manager">service.auth_manager</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -47711,6 +47794,7 @@ imported by:
 imports:
     <a href="#config.settings">config.settings</a>
  &#8226;   <a href="#datebase_service">datebase_service</a>
+ &#8226;   <a href="#detected_device">detected_device</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#service">service</a>
 
@@ -47720,6 +47804,31 @@ imported by:
     <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#gui.autorform">gui.autorform</a>
  &#8226;   <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="service.emailservice"></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/emailservice.py" type="text/plain"><tt>service.emailservice</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config.settings">config.settings</a>
+ &#8226;   <a href="#email">email</a>
+ &#8226;   <a href="#email.encoders">email.encoders</a>
+ &#8226;   <a href="#email.mime.base">email.mime.base</a>
+ &#8226;   <a href="#email.mime.multipart">email.mime.multipart</a>
+ &#8226;   <a href="#email.mime.text">email.mime.text</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#service">service</a>
+ &#8226;   <a href="#smtplib">smtplib</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.app_gui">gui.app_gui</a>
 
   </div>
 
@@ -52145,6 +52254,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#service.emailservice">service.emailservice</a>
 
   </div>
 
@@ -53534,7 +53644,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#gui.app_gui">gui.app_gui</a>
+    <a href="#gui.UI.header">gui.UI.header</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
+ &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#gui.autorform">gui.autorform</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
@@ -53708,7 +53820,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#gui.app_gui">gui.app_gui</a>
+    <a href="#gui.UI.header">gui.UI.header</a>
+ &#8226;   <a href="#gui.UI.ui">gui.UI.ui</a>
+ &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#tkinter">tkinter</a>
 
   </div>

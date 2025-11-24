@@ -17,6 +17,7 @@ def build_with_spec():
         print(f"❌ Файл {spec_file} не найден!")
         return
     
+    # Очищаем build и dist папки полностью
     for folder in ['build', 'dist']:
         folder_path = os.path.join(project_dir, folder)
         if os.path.exists(folder_path):
@@ -38,6 +39,7 @@ def build_with_spec():
         if result.returncode == 0:
             print("✅ Сборка завершена успешно!")
             print("📦 EXE файл: dist/AutoclickerApp.exe")
+            print("💡 Файл готов к распространению (без .env)")
         else:
             print(f"❌ Ошибка сборки: {result.stderr}")
             

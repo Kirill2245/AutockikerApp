@@ -21,13 +21,19 @@ class AppGUI:
         self.root = root
         self.core = core_instance
         self.header = Header(self.root)
-        self.setup_ui()
-        self.setup_logging()
+        self.setup_ui()  # Сначала создаем UI
+        self.setup_logging()  # Затем настраиваем логирование
         self.email_service = EmailService()
         self.modal_report = ModalReport(self.root, self.email_service)
+    
     def setup_logging(self):
-        # Подключаем обработчик логов к консольному текстовому полю
-        self.log_handler = LogTextHandler(self.console_text)
+        """Настройка логирования - ВЫЗЫВАЕТСЯ ПОСЛЕ создания console_text"""
+        # Проверяем что console_text существует
+        if hasattr(self, 'console_text'):
+            self.log_handler = LogTextHandler(self.console_text)
+            print("✅ Логирование настроено")
+        else:
+            print("⚠️ console_text еще не создан")
     
     def setup_ui(self):
         if not auth_manager.check_auth():
@@ -73,7 +79,7 @@ class AppGUI:
         self.create_settings_panel(main_frame)
         
         # Правая панель - консоль
-        self.create_console_panel(main_frame)
+        self.create_console_panel(main_frame)  # Здесь создается console_text
     
     def create_settings_panel(self, parent):
         settings_container = tk.Frame(parent, bg="#152238")
@@ -192,7 +198,7 @@ class AppGUI:
         )
         console_title.place(x=20, y=10)
         
-        # Текстовое поле консоли
+        # Текстовое поле консоли - СОЗДАЕТСЯ ЗДЕСЬ
         self.console_text = scrolledtext.ScrolledText(
             console_container,
             wrap=tk.WORD,
@@ -249,6 +255,10 @@ class AppGUI:
 
     def write_to_console(self, message, level=logging.INFO):
         """Добавляет текст в консоль с указанным уровнем"""
+        if not hasattr(self, 'console_text'):
+            print(f"⚠️ Console text not available: {message}")
+            return
+            
         self.console_text.configure(state='normal')
         
         if level >= logging.ERROR:
@@ -295,10 +305,11 @@ class AppGUI:
     
     def clear_console(self):
         """Очистка консоли"""
-        self.console_text.configure(state='normal')
-        self.console_text.delete(1.0, tk.END)
-        self.console_text.configure(state='disabled')
-        self.write_to_console("🧹 Консоль очищена\n")
+        if hasattr(self, 'console_text'):
+            self.console_text.configure(state='normal')
+            self.console_text.delete(1.0, tk.END)
+            self.console_text.configure(state='disabled')
+            self.write_to_console("🧹 Консоль очищена\n")
     
     def show_auth_warning(self):
         """Показывает предупреждение об отсутствии авторизации"""

@@ -5,12 +5,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import os
-import config as cfg
-
+from config.settings import env_service
 class EmailService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
+        self.LOGIN = env_service.get_env_var('LOGIN')
+        self.PASSWORD = env_service.get_env_var('PASSWORD')
     def send_feedback_email(self, subject, body, attached_files=None, recipient="rzovliev@gmail.com"):
         """Отправляет письмо с обратной связью и прикрепленными файлами"""
         if attached_files is None:
@@ -20,18 +20,18 @@ class EmailService:
             # Создаем сообщение
             msg = MIMEMultipart()
             msg['Subject'] = subject
-            msg['From'] = cfg.LOGIN
+            msg['From'] = self.LOGIN
             msg['To'] = recipient
             
             # Форматируем тело письма
             formatted_body = f"""
-Сообщение от пользователя KLIK KLAK:
+            Сообщение от пользователя KLIK KLAK:
 
-{body}
+            {body}
 
----
-Отправлено из приложения KLIK KLAK
-"""
+            ---
+            Отправлено из приложения KLIK KLAK
+            """
             
             msg.attach(MIMEText(formatted_body, 'plain', 'utf-8'))
             
@@ -68,7 +68,7 @@ class EmailService:
             try:
                 server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
                 server.starttls()
-                server.login(cfg.LOGIN, cfg.PASSWORD)
+                server.login(self.LOGIN, self.PASSWORD)
                 server.send_message(msg)
                 server.quit()
                 smtp_success = True
@@ -80,7 +80,7 @@ class EmailService:
             if not smtp_success:
                 try:
                     server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
-                    server.login(cfg.LOGIN, cfg.PASSWORD)
+                    server.login(self.LOGIN, self.PASSWORD)
                     server.send_message(msg)
                     server.quit()
                     smtp_success = True
@@ -89,10 +89,10 @@ class EmailService:
                     smtp_errors.append(f"Порт 465: {e2}")
             
             # Вариант 3: Yandex - альтернативный почтовый сервис
-            if not smtp_success and 'yandex' in cfg.LOGIN.lower():
+            if not smtp_success and 'yandex' in self.LOGIN.lower():
                 try:
                     server = smtplib.SMTP_SSL('smtp.yandex.ru', 465, timeout=10)
-                    server.login(cfg.LOGIN, cfg.PASSWORD)
+                    server.login(self.LOGIN, self.PASSWORD)
                     server.send_message(msg)
                     server.quit()
                     smtp_success = True
