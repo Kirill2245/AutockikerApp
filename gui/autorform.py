@@ -48,7 +48,7 @@ class AutorForm:
             # Проверяем авторизацию
             if auth_manager.login(username, password):
                 print(f"✅ Успешная авторизация: {username}")
-                messagebox.showinfo("Успех", "Авторизация прошла успешно!")
+                
                 
                 # Вызываем callback при успешной авторизации
                 if self.on_login_success:

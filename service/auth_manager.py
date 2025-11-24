@@ -20,8 +20,7 @@ class AuthManager:
             return True
         else:
             False
-    
-    
+
     def check_auth(self):
         return self.is_authenticated
 
