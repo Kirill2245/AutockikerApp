@@ -8,7 +8,6 @@ class DetectedDevice:
     def __init__(self):
         self
     def get_unique_system_info(self):
-        """Собирает уникальную идентифицирующую информацию об устройстве"""
         
         machine_id = hashlib.md5(platform.node().encode()).hexdigest()[:16]
         mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) 
