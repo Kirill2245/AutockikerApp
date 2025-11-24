@@ -9,6 +9,7 @@ a = Analysis(
         ('gui', 'gui'), 
         ('emitter.py', '.'),
         ('assets/2.ico', 'assets'),
+        ('.env', '.')
     ],
     hiddenimports=[
         'undetected_chromedriver',

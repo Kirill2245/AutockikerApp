@@ -23,13 +23,11 @@ def setup_async():
         print(f"Ошибка настройки async: {e}")
 
 def show_auth_form():
-    """Показывает форму авторизации и возвращает результат"""
     from gui.autorform import AutorForm
     
     auth_win = tk.Tk()
     auth_win.title("Авторизация")
     
-    # Центрируем окно
     def center_window(window, width, height):
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
@@ -39,28 +37,23 @@ def show_auth_form():
     
     center_window(auth_win, 400, 350)
     
-    # Переменная для хранения результата авторизации
     auth_result = {"success": False}
     
-    # Создаем форму авторизации
+
     auth_form = AutorForm(auth_win, None)
     
     def on_successful_login():
-        """Вызывается при успешной авторизации"""
         auth_result["success"] = True
-        auth_win.quit()  # Выходим из mainloop
-        auth_win.destroy()  # Закрываем окно
+        auth_win.quit()  
+        auth_win.destroy()  
     
-    # Устанавливаем callback для успешной авторизации
     auth_form.on_login_success = on_successful_login
     
-    # Запускаем главный цикл для окна авторизации
     auth_win.mainloop()
     
     return auth_result["success"]
 
 def show_main_app():
-    """Показывает основное приложение"""
     try:
         print("🚀 Запуск основного приложения...")
         
@@ -71,15 +64,13 @@ def show_main_app():
         root = tk.Tk()
         root.title("AutoclickerApp - Авторизован")
         
-        # Создаем core
         core = Core()
         
-        # Создаем GUI
+
         app = AppGUI(root, core)
         
         print("✅ GUI создан, запускаем главный цикл...")
         
-        # Запускаем асинхронный loop в отдельном потоке
         def run_async_loop():
             try:
                 loop = asyncio.new_event_loop()
@@ -93,7 +84,6 @@ def show_main_app():
         
         root.mainloop()
         
-        # Очистка при закрытии
         try:
             asyncio.get_event_loop().stop()
         except:
@@ -111,10 +101,8 @@ def main():
     try:
         print("🚀 Запуск AutoclickerApp...")
         
-        # Настраиваем async loop
         setup_async()
         
-        # Проверяем авторизацию
         from service.auth_manager import auth_manager
         
         if auth_manager.check_auth():
@@ -122,7 +110,6 @@ def main():
             show_main_app()
         else:
             print("🔐 Требуется авторизация")
-            # Показываем форму авторизации
             auth_success = show_auth_form()
             
             if auth_success:

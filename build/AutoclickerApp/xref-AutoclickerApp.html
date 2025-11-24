@@ -157,6 +157,7 @@ imports:
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#genericpath">genericpath</a>
  &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#gui.autorform">gui.autorform</a>
  &#8226;   <a href="#heapq">heapq</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#json">json</a>
@@ -186,6 +187,7 @@ imports:
  &#8226;   <a href="#selenium.webdriver.common.by">selenium.webdriver.common.by</a>
  &#8226;   <a href="#selenium.webdriver.support">selenium.webdriver.support</a>
  &#8226;   <a href="#selenium.webdriver.support.expected_conditions">selenium.webdriver.support.expected_conditions</a>
+ &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
  &#8226;   <a href="#sre_compile">sre_compile</a>
  &#8226;   <a href="#sre_constants">sre_constants</a>
  &#8226;   <a href="#sre_parse">sre_parse</a>
@@ -5113,7 +5115,7 @@ imported by:
 
 <div class="node">
   <a name="core"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/__init__.py" type="text/plain"><tt>core</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/__init__.py" type="text/plain"><tt>core</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#core.core_logic">core.core_logic</a>
@@ -5125,7 +5127,7 @@ imported by:
 
 <div class="node">
   <a name="core.core_logic"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_logic.py" type="text/plain"><tt>core.core_logic</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_logic.py" type="text/plain"><tt>core.core_logic</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
@@ -5150,7 +5152,7 @@ imported by:
 
 <div class="node">
   <a name="core.core_main"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_main.py" type="text/plain"><tt>core.core_main</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_main.py" type="text/plain"><tt>core.core_main</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
@@ -6525,7 +6527,7 @@ imported by:
 
 <div class="node">
   <a name="emitter"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/emitter.py" type="text/plain"><tt>emitter</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/emitter.py" type="text/plain"><tt>emitter</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#logging">logging</a>
@@ -9498,10 +9500,11 @@ imported by:
 
 <div class="node">
   <a name="gui"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/__init__.py" type="text/plain"><tt>gui</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/__init__.py" type="text/plain"><tt>gui</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#gui.autorform">gui.autorform</a>
 
   </div>
 
@@ -9509,18 +9512,39 @@ imported by:
 
 <div class="node">
   <a name="gui.app_gui"></a>
-  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/app_gui.py" type="text/plain"><tt>gui.app_gui</tt></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/app_gui.py" type="text/plain"><tt>gui.app_gui</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
  &#8226;   <a href="#emitter">emitter</a>
  &#8226;   <a href="#gui">gui</a>
  &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
  &#8226;   <a href="#threading">threading</a>
  &#8226;   <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tkinter.font">tkinter.font</a>
  &#8226;   <a href="#tkinter.scrolledtext">tkinter.scrolledtext</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="gui.autorform"></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/autorform.py" type="text/plain"><tt>gui.autorform</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#gui">gui</a>
+ &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.font">tkinter.font</a>
+ &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
 
   </div>
   <div class="import">
@@ -17002,6 +17026,35 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="service"></a>
+  <a target="code" href="-" type="text/plain"><tt>service</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imported by:
+    <a href="#service.auth_manager">service.auth_manager</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="service.auth_manager"></a>
+  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/auth_manager.py" type="text/plain"><tt>service.auth_manager</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#service">service</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#gui.autorform">gui.autorform</a>
+ &#8226;   <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="setuptools"></a>
   <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/.venv/Lib/site-packages/setuptools/__init__.py" type="text/plain"><tt>setuptools</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
@@ -22306,6 +22359,7 @@ imports:
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.font">tkinter.font</a>
+ &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
  &#8226;   <a href="#tkinter.scrolledtext">tkinter.scrolledtext</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#traceback">traceback</a>
@@ -22316,11 +22370,30 @@ imports:
   <div class="import">
 imported by:
     <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#gui.autorform">gui.autorform</a>
  &#8226;   <a href="#main.py">main.py</a>
+ &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.font">tkinter.font</a>
+ &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
  &#8226;   <a href="#tkinter.scrolledtext">tkinter.scrolledtext</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="tkinter.commondialog"></a>
+  <a target="code" href="///C:/Users/Kirill/AppData/Local/Python/pythoncore-3.14-64/Lib/tkinter/commondialog.py" type="text/plain"><tt>tkinter.commondialog</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#tkinter">tkinter</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#tkinter.messagebox">tkinter.messagebox</a>
 
   </div>
 
@@ -22355,6 +22428,25 @@ imports:
   <div class="import">
 imported by:
     <a href="#gui.app_gui">gui.app_gui</a>
+ &#8226;   <a href="#gui.autorform">gui.autorform</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="tkinter.messagebox"></a>
+  <a target="code" href="///C:/Users/Kirill/AppData/Local/Python/pythoncore-3.14-64/Lib/tkinter/messagebox.py" type="text/plain"><tt>tkinter.messagebox</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#gui.autorform">gui.autorform</a>
  &#8226;   <a href="#tkinter">tkinter</a>
 
   </div>
