@@ -7,259 +7,24 @@ from tkinter import font
 from tkinter import scrolledtext
 from emitter import global_emitter
 from service.auth_manager import auth_manager
+from service.emailservice import EmailService
 from tkinter import scrolledtext, messagebox, Toplevel, filedialog
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+from modalreport import ModalReport
+from .UI.ui import *
+from .UI.header import Header
 import os
 import config as cfg
-
-class ModernButton(tk.Canvas):
-    def __init__(self, master, text, command, width=120, height=40, 
-                 bg_color="#388662", hover_color="#2a6450", text_color="white", 
-                 radius=10, font_size=12, **kwargs):
-        super().__init__(master, width=width, height=height, 
-                        highlightthickness=0, **kwargs)
-        self.command = command
-        self.bg_color = bg_color
-        self.hover_color = hover_color
-        self.text_color = text_color
-        self.radius = radius
-        self.font_size = font_size
-        self.text = text
-        
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
-        self.bind("<Button-1>", self._on_click)
-        
-        self._draw_button(bg_color)
-    
-    def _draw_button(self, color):
-        self.delete("all")
-        width = self.winfo_width()
-        height = self.winfo_height()
-        
-        # Рисуем закругленный прямоугольник
-        self.create_round_rect(0, 0, width, height, self.radius, fill=color, outline="")
-        
-        # Добавляем текст
-        self.create_text(width/2, height/2, text=self.text, 
-                        fill=self.text_color, 
-                        font=("Arial", self.font_size, "bold"))
-    
-    def create_round_rect(self, x1, y1, x2, y2, radius, **kwargs):
-        points = [x1+radius, y1,
-                 x2-radius, y1,
-                 x2, y1,
-                 x2, y1+radius,
-                 x2, y2-radius,
-                 x2, y2,
-                 x2-radius, y2,
-                 x1+radius, y2,
-                 x1, y2,
-                 x1, y2-radius,
-                 x1, y1+radius,
-                 x1, y1]
-        return self.create_polygon(points, smooth=True, **kwargs)
-    
-    def _on_enter(self, event):
-        self._draw_button(self.hover_color)
-    
-    def _on_leave(self, event):
-        self._draw_button(self.bg_color)
-    
-    def _on_click(self, event):
-        self.command()
-
-class RoundedFrame(tk.Canvas):
-    def __init__(self, master, radius=20, color="#2D4A5D", **kwargs):
-        super().__init__(master, highlightthickness=0, bg=master.cget("bg"), **kwargs)
-        self.radius = radius
-        self.color = color
-        self.bind("<Configure>", self._draw_rounded_rect)
-    
-    def _draw_rounded_rect(self, event=None):
-        """Рисует закругленный прямоугольник"""
-        self.delete("all")
-        width = self.winfo_width()
-        height = self.winfo_height()
-        
-        if width > 0 and height > 0:
-            self.create_round_rect(0, 0, width, height, self.radius, fill=self.color, outline="")
-    
-    def create_round_rect(self, x1, y1, x2, y2, radius, **kwargs):
-        points = [
-            x1+radius, y1,
-            x2-radius, y1,
-            x2, y1,
-            x2, y1+radius,
-            x2, y2-radius,
-            x2, y2,
-            x2-radius, y2,
-            x1+radius, y2,
-            x1, y2,
-            x1, y2-radius,
-            x1, y1+radius,
-            x1, y1
-        ]
-        return self.create_polygon(points, smooth=True, **kwargs)
-
-class ModernEntry(tk.Frame):
-    def __init__(self, master, placeholder="", width=30, **kwargs):
-        super().__init__(master, bg=master.cget("bg"))
-        self.placeholder = placeholder
-        self.placeholder_color = "#888888"
-        self.text_color = "white"
-        
-        self.entry = tk.Entry(
-            self, 
-            width=width,
-            bg="#3A556F",
-            fg=self.placeholder_color,
-            insertbackground="white",
-            relief="flat",
-            font=("Arial", 10)
-        )
-        self.entry.pack(fill="both", padx=10, pady=8)
-        
-        # Добавляем привязки для вставки
-        self.entry.bind("<Control-v>", self._handle_paste)
-        self.entry.bind("<Button-3>", self._show_context_menu)  # ПКМ
-        
-        if placeholder:
-            self.entry.insert(0, placeholder)
-            self.entry.bind("<FocusIn>", self._on_focus_in)
-            self.entry.bind("<FocusOut>", self._on_focus_out)
-        
-        # Создаем рамку
-        self.canvas = tk.Canvas(self, height=2, bg="#4A657F", highlightthickness=0)
-        self.canvas.pack(fill="x", padx=10)
-        self.canvas.create_line(0, 1, width*10, 1, fill="#5D7A95", width=2)
-        
-        # Создаем контекстное меню
-        self._create_context_menu()
-    
-    def _create_context_menu(self):
-        """Создает контекстное меню для поля ввода"""
-        self.context_menu = tk.Menu(self.entry, tearoff=0)
-        self.context_menu.add_command(label="Вырезать", command=self._cut)
-        self.context_menu.add_command(label="Копировать", command=self._copy)
-        self.context_menu.add_command(label="Вставить", command=self._paste)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="Выделить все", command=self._select_all)
-    
-    def _show_context_menu(self, event):
-        """Показывает контекстное меню"""
-        self.context_menu.tk_popup(event.x_root, event.y_root)
-    
-    def _handle_paste(self, event=None):
-        """Обрабатывает вставку через Ctrl+V"""
-        self._paste()
-        return "break"  # Предотвращаем стандартное поведение
-    
-    def _cut(self):
-        """Вырезание текста"""
-        self.entry.event_generate("<<Cut>>")
-    
-    def _copy(self):
-        """Копирование текста"""
-        self.entry.event_generate("<<Copy>>")
-    
-    def _paste(self):
-        """Вставка текста"""
-        try:
-            # Очищаем плейсхолдер при вставке
-            if self.entry.get() == self.placeholder:
-                self.entry.delete(0, tk.END)
-                self.entry.config(fg=self.text_color)
-            
-            self.entry.event_generate("<<Paste>>")
-        except Exception:
-            pass
-    
-    def _select_all(self):
-        """Выделение всего текста"""
-        self.entry.select_range(0, tk.END)
-        self.entry.icursor(tk.END)
-    
-    def _on_focus_in(self, event):
-        """При фокусе убираем плейсхолдер"""
-        if self.entry.get() == self.placeholder:
-            self.entry.delete(0, tk.END)
-            self.entry.config(fg=self.text_color)
-    
-    def _on_focus_out(self, event):
-        """При потере фокуса возвращаем плейсхолдер если поле пустое"""
-        if not self.entry.get().strip():
-            self.entry.insert(0, self.placeholder)
-            self.entry.config(fg=self.placeholder_color)
-    
-    def get(self):
-        value = self.entry.get()
-        return value if value != self.placeholder else ""
-
-class LogTextHandler:
-    def __init__(self, text_widget):
-        self.text_widget = text_widget
-        # Настраиваем теги для цветов
-        self.text_widget.tag_config("ERROR", foreground="#FF6B6B")
-        self.text_widget.tag_config("WARNING", foreground="#FFA726")
-        self.text_widget.tag_config("INFO", foreground="#4FC3F7")
-        self.text_widget.tag_config("DEBUG", foreground="#BA68C8")
-        self.text_widget.tag_config("CRITICAL", foreground="#FF5252")
-        self.text_widget.tag_config("SUCCESS", foreground="#66BB6A")
-        
-        # Регистрируем себя в emitter
-        global_emitter.register_callback(self.handle_log)
-    
-    def _is_chrome_stacktrace(self, message):
-        if not message:
-            return False
-            
-        stacktrace_indicators = [
-            'Stacktrace:',
-            'GetHandleVerifier',
-            '(No symbol)',
-            'BaseThreadInitThunk',
-            'RtlGetAppContainerNamedObjectPath',
-            'from invalid argument:',
-            'unrecognized chrome option:'
-        ]
-        
-        message_str = str(message).lower()
-        return any(indicator.lower() in message_str for indicator in stacktrace_indicators)
-    
-    def handle_log(self, message, level=logging.INFO):
-        if self._is_chrome_stacktrace(message):
-            return 
-        
-        if level >= logging.ERROR:
-            tag = "ERROR"
-        elif level >= logging.WARNING:
-            tag = "WARNING"
-        elif level >= logging.INFO:
-            tag = "INFO"
-        elif level >= logging.CRITICAL:
-            tag = "CRITICAL"
-        else:
-            tag = "DEBUG"
-            
-        # Добавляем запись в текстовое поле
-        self.text_widget.configure(state='normal')
-        self.text_widget.insert(tk.END, f"{message}\n", tag)
-        self.text_widget.configure(state='disabled')
-        # Автопрокрутка к концу
-        self.text_widget.see(tk.END)
 
 class AppGUI:
     def __init__(self, root, core_instance=None):
         self.root = root
         self.core = core_instance
+        self.header = Header(self.root)
         self.setup_ui()
         self.setup_logging()
-    
+        self.email_service = EmailService()
+        self.modal_report = ModalReport(self.root, self.email_service)
     def setup_logging(self):
         # Подключаем обработчик логов к консольному текстовому полю
         self.log_handler = LogTextHandler(self.console_text)
@@ -278,7 +43,7 @@ class AppGUI:
         self.setup_styles()
         
         # Заголовок приложения
-        self.create_header()
+        self.header.create_header()
         
         # Основной контент
         self.create_main_content()
@@ -299,32 +64,7 @@ class AppGUI:
                            background="#152238", 
                            foreground="white",
                            font=("Arial", 10))
-    
-    def create_header(self):
-        header_frame = tk.Frame(self.root, bg="#1E2B3E", height=80)
-        header_frame.pack(fill="x", padx=20, pady=10)
-        header_frame.pack_propagate(False)
-        
-        # Логотип и название
-        logo_label = tk.Label(
-            header_frame,
-            text="⚡ KLIK KLAK",
-            font=("Arial", 20, "bold"),
-            fg="#4FC3F7",
-            bg="#1E2B3E"
-        )
-        logo_label.pack(side="left", padx=20, pady=20)
-        
-        # Статус приложения
-        status_label = tk.Label(
-            header_frame,
-            text="✅ Система активна",
-            font=("Arial", 10),
-            fg="#66BB6A",
-            bg="#1E2B3E"
-        )
-        status_label.pack(side="right", padx=20, pady=20)
-    
+
     def create_main_content(self):
         main_frame = tk.Frame(self.root, bg="#152238")
         main_frame.pack(fill="both", expand=True, padx=20, pady=10)
@@ -493,7 +233,7 @@ class AppGUI:
     def create_footer(self):
         footer_frame = tk.Frame(self.root, bg="#1E2B3E", height=30)
         footer_frame.pack(fill="x", side="bottom", padx=20, pady=5)
- 
+
         # Кнопка обратной связи
         feedback_btn = tk.Label(
             footer_frame,
@@ -504,286 +244,8 @@ class AppGUI:
             cursor="hand2"
         )
         feedback_btn.pack(side="right", padx=10)
-        feedback_btn.bind("<Button-1>", lambda e: self.open_feedback_window())
-    
-    def open_feedback_window(self):
-        """Открывает окно для отправки отзыва с возможностью прикрепления файлов"""
-        logging.info("📧 Открытие формы обратной связи")
-        
-        # Создаем окно для обратной связи
-        self.feedback_window = Toplevel(self.root)
-        self.feedback_window.title("Обратная связь")
-        self.feedback_window.geometry("600x550")
-        self.feedback_window.configure(bg="#1E2B3E")
-        self.feedback_window.resizable(False, False)
-        
-        # Центрируем окно
-        self.feedback_window.transient(self.root)
-        self.feedback_window.grab_set()
-        
-        # Список прикрепленных файлов
-        self.attached_files = []
-        
-        # Заголовок
-        title_label = tk.Label(
-            self.feedback_window,
-            text="📧 Обратная связь",
-            font=("Arial", 16, "bold"),
-            fg="white",
-            bg="#1E2B3E"
-        )
-        title_label.pack(pady=15)
-        
-        # Тема письма
-        subject_frame = tk.Frame(self.feedback_window, bg="#1E2B3E")
-        subject_frame.pack(fill="x", padx=20, pady=10)
-        
-        tk.Label(
-            subject_frame,
-            text="Тема:",
-            font=("Arial", 11, "bold"),
-            fg="white",
-            bg="#1E2B3E"
-        ).pack(anchor="w")
-        
-        self.subject_entry = tk.Entry(
-            subject_frame,
-            width=50,
-            bg="#2D4A5D",
-            fg="white",
-            insertbackground="white",
-            relief="flat",
-            font=("Arial", 10)
-        )
-        self.subject_entry.pack(fill="x", pady=5)
-        self.subject_entry.insert(0, "Сообщение об ошибке в KLIK KLAK")
-        
-        # Текст письма
-        message_frame = tk.Frame(self.feedback_window, bg="#1E2B3E")
-        message_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        tk.Label(
-            message_frame,
-            text="Сообщение:",
-            font=("Arial", 11, "bold"),
-            fg="white",
-            bg="#1E2B3E"
-        ).pack(anchor="w")
-        
-        self.text_area = scrolledtext.ScrolledText(
-            message_frame,
-            wrap=tk.WORD,
-            width=50,
-            height=10,
-            bg="#2D4A5D",
-            fg="white",
-            insertbackground="white",
-            font=("Arial", 10),
-            relief="flat"
-        )
-        self.text_area.pack(fill="both", expand=True, pady=5)
-        
-        # Подсказка в текстовом поле
-        self.text_area.insert("1.0", "Опишите подробно проблему, с которой столкнулись:")
-        
-        # Фрейм для прикрепленных файлов
-        attachment_frame = tk.Frame(self.feedback_window, bg="#1E2B3E")
-        attachment_frame.pack(fill="x", padx=20, pady=10)
-        
-        # Кнопка прикрепления файлов
-        attach_button = tk.Button(
-            attachment_frame,
-            text="📎 Прикрепить файлы",
-            command=self.attach_files,
-            bg="#FF9800",
-            fg="white",
-            font=("Arial", 10),
-            relief="flat"
-        )
-        attach_button.pack(side="left")
-        
-        # Список прикрепленных файлов
-        self.attachment_list = tk.Listbox(
-            attachment_frame, 
-            height=3, 
-            width=40,
-            bg="#2D4A5D",
-            fg="white",
-            selectbackground="#3A556F"
-        )
-        self.attachment_list.pack(side="left", padx=10, fill="x", expand=True)
-        
-        # Кнопка удаления выбранного файла
-        remove_button = tk.Button(
-            attachment_frame,
-            text="❌ Удалить",
-            command=self.remove_attachment,
-            bg="#D32F2F",
-            fg="white",
-            font=("Arial", 8),
-            relief="flat"
-        )
-        remove_button.pack(side="right")
-        
-        # Кнопки
-        button_frame = tk.Frame(self.feedback_window, bg="#1E2B3E")
-        button_frame.pack(fill="x", padx=20, pady=15)
-        
-        send_button = tk.Button(
-            button_frame,
-            text="📤 Отправить",
-            command=self.send_feedback_email,
-            bg="#388662",
-            fg="white",
-            font=("Arial", 11, "bold"),
-            width=12,
-            height=1,
-            relief="flat"
-        )
-        send_button.pack(side="right", padx=5)
-        
-        cancel_button = tk.Button(
-            button_frame,
-            text="❌ Отмена",
-            command=self.feedback_window.destroy,
-            bg="#D32F2F",
-            fg="white",
-            font=("Arial", 11),
-            width=10,
-            height=1,
-            relief="flat"
-        )
-        cancel_button.pack(side="right", padx=5)
-    
-    def attach_files(self):
-        """Прикрепление файлов к письму"""
-        filetypes = [
-            ("Все файлы", "*.*"),
-            ("Изображения", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"),
-            ("Скриншоты", "*.png *.jpg *.jpeg"),
-            ("Документы", "*.pdf *.doc *.docx *.txt"),
-            ("Архивы", "*.zip *.rar *.7z")
-        ]
-        
-        files = filedialog.askopenfilenames(
-            title="Выберите файлы для прикрепления",
-            filetypes=filetypes
-        )
-        
-        if files:
-            for file_path in files:
-                if file_path not in self.attached_files:
-                    self.attached_files.append(file_path)
-                    # Показываем только имя файла в списке
-                    file_name = os.path.basename(file_path)
-                    self.attachment_list.insert(tk.END, file_name)
-            
-            messagebox.showinfo("Успех", f"Прикреплено {len(files)} файл(ов)")
-    
-    def remove_attachment(self):
-        """Удаление выбранного файла из списка прикрепленных"""
-        selected = self.attachment_list.curselection()
-        if selected:
-            index = selected[0]
-            self.attached_files.pop(index)
-            self.attachment_list.delete(index)
-    
-    def send_feedback_email(self):
-        """Отправляет письмо с обратной связью и прикрепленными файлами"""
-        subject = self.subject_entry.get().strip()
-        body = self.text_area.get("1.0", tk.END).strip()
-        
-        if not subject:
-            messagebox.showerror("Ошибка", "Введите тему письма!")
-            return
-        
-        if not body or body == "Опишите подробно проблему, с которой столкнулись:":
-            messagebox.showerror("Ошибка", "Введите текст сообщения!")
-            return
-        
-        try:
-            # Показываем индикатор отправки
-            sending_label = tk.Label(
-                self.feedback_window,
-                text="⏳ Отправка...",
-                fg="#FFA726",
-                bg="#1E2B3E",
-                font=("Arial", 10)
-            )
-            sending_label.pack(pady=5)
-            self.feedback_window.update()
-            
-            # Создаем сообщение
-            msg = MIMEMultipart()
-            msg['Subject'] = subject
-            msg['From'] = cfg.LOGIN
-            msg['To'] = "rzovliev@gmail.com"
-            
-            # Форматируем тело письма
-            formatted_body = f"""
-Сообщение от пользователя KLIK KLAK:
-
-{body}
-
----
-Отправлено из приложения KLIK KLAK
-"""
-            
-            msg.attach(MIMEText(formatted_body, 'plain', 'utf-8'))
-            
-            # Прикрепляем файлы
-            for file_path in self.attached_files:
-                try:
-                    with open(file_path, "rb") as file:
-                        # Создаем MIME часть для файла
-                        part = MIMEBase('application', 'octet-stream')
-                        part.set_payload(file.read())
-                        
-                    # Кодируем файл в base64
-                    encoders.encode_base64(part)
-                    
-                    # Добавляем заголовки
-                    file_name = os.path.basename(file_path)
-                    part.add_header(
-                        'Content-Disposition',
-                        f'attachment; filename="{file_name}"'
-                    )
-                    
-                    # Добавляем файл к сообщению
-                    msg.attach(part)
-                    
-                except Exception as file_error:
-                    messagebox.showerror("Ошибка", f"Не удалось прикрепить файл {file_path}: {file_error}")
-                    sending_label.destroy()
-                    return
-            
-            # Отправка через Gmail
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            server.login(cfg.LOGIN, cfg.PASSWORD)
-            server.send_message(msg)
-            server.quit()
-            
-            # Убираем индикатор и показываем успех
-            sending_label.destroy()
-            
-            # Показываем результат
-            if self.attached_files:
-                files_info = f" с {len(self.attached_files)} прикрепленными файлом(ами)"
-            else:
-                files_info = ""
-                
-            messagebox.showinfo("Успех", f"✅ Ваше сообщение отправлено{files_info}!")
-            logging.info(f"📧 Письмо с обратной связью успешно отправлено{files_info}")
-            
-            # Закрываем окно
-            self.feedback_window.destroy()
-            
-        except smtplib.SMTPAuthenticationError:
-            messagebox.showerror("Ошибка", "❌ Ошибка авторизации. Проверьте настройки почты.")
-            logging.error("❌ Ошибка авторизации при отправке письма")
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"❌ Не удалось отправить письмо: {e}")
-            logging.error(f"❌ Ошибка отправки письма: {e}")
+        # Используйте self.modal_report вместо ModalReport
+        feedback_btn.bind("<Button-1>", lambda e: self.modal_report.open_feedback_window())
 
     def write_to_console(self, message, level=logging.INFO):
         """Добавляет текст в консоль с указанным уровнем"""
@@ -824,11 +286,11 @@ class AppGUI:
     def show_help(self):
         """Список доступных команд"""
         help_text = """
-Доступные команды:
-• help - показать справку
-• clear - очистить консоль  
-• status - статус системы
-"""
+        Доступные команды:
+        • help - показать справку
+        • clear - очистить консоль  
+        • status - статус системы
+        """
         self.write_to_console(help_text)
     
     def clear_console(self):
@@ -916,8 +378,6 @@ class AppGUI:
         thread.daemon = True
         thread.start()
 
-    # ДОБАВЬТЕ ЭТИ МЕТОДЫ ПОСЛЕ stop_process:
-
     def start_process(self, url, timeout=0.5, max_retries=3, classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", classModal="MuiPaper-root"):
         """Запускает основной процесс в отдельном потоке"""
         def run_async():
@@ -937,11 +397,3 @@ class AppGUI:
         thread = threading.Thread(target=run_async)
         thread.daemon = True
         thread.start()
-
-    async def demo_process(self, url):
-        """Демо-процесс для тестирования без core"""
-        logging.info(f"🔧 Демо-процесс запущен для: {url}")
-        for i in range(5):
-            await asyncio.sleep(1)
-            logging.info(f"🔧 Демо-процесс выполняется... шаг {i+1}/5")
-        logging.info("✅ Демо-процесс завершен")
