@@ -24,7 +24,7 @@ def setup_async():
 
 def show_auth_form():
     from gui.autorform import AutorForm
-    
+
     auth_win = tk.Tk()
     auth_win.title("Авторизация")
     
