@@ -7,6 +7,7 @@ class AuthManager:
     def __init__(self):
         self.is_authenticated = False
         self.user = None
+
         self.oauth_token = env_service.get_env_var('YANDEX_OAUTH_TOKEN')
         self.file_path = env_service.get_env_var('TABLE_PATH')
         self.users_data = []  

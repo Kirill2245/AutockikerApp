@@ -93,6 +93,8 @@ class CoreLogic:
         return None
     async def monitor_dynamic_elements_simple(self):
         last_count = 0
+        processed_count = 0  # Счетчик обработанных элементов
+        
         while self.core_instance is None or not self.core_instance._stop_requested:
             try:
                 blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
@@ -102,38 +104,64 @@ class CoreLogic:
                     blocks = self.driver.find_elements(By.CSS_SELECTOR, "tbody > tr")
                 if not blocks:
                     await self.log("Строка таблицы не найдена", logging.CRITICAL)
+                    await asyncio.sleep(self.timeout // 3)
+                    continue
                 
                 current_count = len(blocks)
                 
-                if current_count > last_count:
-                    new_elements_count = current_count - last_count
-                    print(f"Появилось новых элементов: {new_elements_count}")
-                    await self.log(f"📊 Появилось новых элементов: {new_elements_count}", logging.INFO)
+                # Если количество элементов уменьшилось - начинаем сначала
+                if current_count < last_count:
+                    print(f"🔁 Количество элементов уменьшилось с {last_count} до {current_count}. Начинаем сначала!")
+                    await self.log(f"🔁 Количество элементов уменьшилось с {last_count} до {current_count}. Начинаем сначала!", logging.INFO)
+                    last_count = 0
+                    processed_count = 0
+                    continue
+                
+                # Если появились новые элементы или мы еще не обработали все
+                if current_count > processed_count:
+                    # Начинаем с первого необработанного элемента
+                    start_index = processed_count
                     
-                    for i in range(last_count, current_count):
+                    print(f"🔄 Продолжаем кликать элементы с {start_index + 1} по {current_count}")
+                    await self.log(f"🔄 Продолжаем кликать элементы с {start_index + 1} по {current_count}", logging.INFO)
+                    
+                    for i in range(start_index, current_count):
+                        # Перепроверяем элементы на каждой итерации
+                        current_blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
+                        if not current_blocks:
+                            current_blocks = self.driver.find_elements(By.CLASS_NAME, "MuiTableRow-root")
+                        if not current_blocks:  
+                            current_blocks = self.driver.find_elements(By.CSS_SELECTOR, "tbody > tr")
+                        
+                        # Если элемент пропал - начинаем сначала
+                        if i >= len(current_blocks):
+                            print(f"⚠️ Элемент {i+1} пропал, начинаем сначала")
+                            last_count = 0
+                            processed_count = 0
+                            break
+                        
                         try:
-                            block = blocks[i]
+                            block = current_blocks[i]
                             block_info = self._get_element_info(block)
+                            
+                            if not block.is_displayed() or not block.is_enabled():
+                                print(f"⚠️ Элемент {i+1} не доступен для клика, пропускаем")
+                                processed_count += 1  # Все равно считаем обработанным
+                                continue
                             
                             if await self.click_element(block, self.max_retries, "строке таблицы"):
                                 print(f"✅ Кликнули на строку таблицы {i+1}")
                                 await self.log(f"✅ Кликнули на строку таблицы {i+1}: {block_info}", logging.INFO)
                                 
-                                # Ждем ПРАВИЛЬНОЕ модальное окно
-                                modal = None
-                                
-                                # Способ 1: Поиск по CSS селектору с классом MuiDrawer-paperAnchorRight
                                 modal = await self.wait_for_element_by_css(
                                     self.driver, 
-                                    ".MuiDrawer-paperAnchorRight",  # Точка в начале для класса
+                                    ".MuiDrawer-paperAnchorRight",
                                     self.timeout
                                 )
                                 
-                                # Способ 2: Если не нашли, пробуем найти любой элемент с нужным классом
                                 if not modal:
                                     all_elements = self.driver.find_elements(By.CLASS_NAME, "MuiDrawer-paperAnchorRight")
                                     for elem in all_elements:
-                                        # Проверяем, что это действительно нужная модалка
                                         classes = elem.get_attribute("class")
                                         if "MuiDrawer-paperAnchorRight" in classes:
                                             modal = elem
@@ -141,34 +169,33 @@ class CoreLogic:
                                 
                                 if not modal:
                                     await self.log("❌ Модальное окно с классом MuiDrawer-paperAnchorRight не найдено", logging.CRITICAL)
-                                    continue  # Переходим к следующему элементу
+                                    processed_count += 1  # Считаем обработанным даже при ошибке
+                                    continue
                                 
-                                # Проверяем, что нашли правильную модалку
                                 modal_classes = modal.get_attribute("class")
                                 if "MuiDrawer-paperAnchorLeft" in modal_classes:
                                     await self.log(f"❌ Найдена левая модалка вместо правой: {modal_classes}", logging.WARNING)
-                                    continue  # Пропускаем если нашли левую модалку
+                                    processed_count += 1  # Считаем обработанным
+                                    continue
                                 
-                                # Модальное окно найдено и проверено
                                 modal_info = self._get_element_info(modal)
                                 await self.log(f"✅ Найдено правильное модальное окно: {modal_info}", logging.INFO)
                                 
                                 await asyncio.sleep(self.timeout / 2) 
                                 
-                                # Ищем кнопку "Принять" в правильной модалке
                                 button = await self.wait_for_element(modal, By.XPATH, ".//button[text()='Принять']", self.timeout)
                                 
                                 if not button:
                                     await self.log("❌ Кнопка 'Принять' не найдена в модальном окне", logging.WARNING)
+                                    processed_count += 1  # Считаем обработанным
                                     continue
                                 
-                                # Проверяем текст кнопки
                                 button_text = button.text.strip()
                                 if button_text != "Принять":
                                     await self.log(f"❌ Найдена кнопка с другим текстом: '{button_text}', пропускаем", logging.WARNING)
+                                    processed_count += 1  # Считаем обработанным
                                     continue
                                 
-                                # Кликаем на кнопку
                                 button_info = self._get_element_info(button)
                                 await self.log(f"🔘 Найдена кнопка 'Принять': {button_info}", logging.INFO)
                                 
@@ -177,14 +204,24 @@ class CoreLogic:
                                     await self.log(f"✅ Кликнули на кнопку 'Принять' {i+1}: {button_info}", logging.INFO)
                                 else:
                                     await self.log(f"❌ Не удалось кликнуть на кнопку 'Принять' {i+1}", logging.ERROR)
+                                
+                                # Увеличиваем счетчик обработанных элементов
+                                processed_count += 1
+                                    
+                            else:
+                                # Если не удалось кликнуть на строку, все равно считаем обработанным
+                                processed_count += 1
                                     
                         except Exception as e:
                             print(f"❌ Ошибка с элементом {i+1}: {e}")
                             await self.log(f"❌ Ошибка с элементом {i+1}: {e}", logging.ERROR)
+                            processed_count += 1  # Считаем обработанным даже при ошибке
                         
                         await asyncio.sleep(self.timeout / 10)
                     
+                    # Обновляем общий счетчик
                     last_count = current_count
+                    print(f"📊 Обработано элементов: {processed_count}/{current_count}")
                 
                 await asyncio.sleep(self.timeout // 3)
                 
