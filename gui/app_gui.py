@@ -246,7 +246,7 @@ class AppGUI:
         # Кнопка информации (теперь слева)
         info_btn = tk.Label(
             footer_frame,
-            text="ℹ Информаиця",
+            text="ℹ Информация",
             font=("Arial", 9, "underline"),
             fg="#4FC3F7",
             bg="#1E2B3E",

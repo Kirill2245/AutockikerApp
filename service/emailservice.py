@@ -11,6 +11,7 @@ class EmailService:
         self.logger = logging.getLogger(__name__)
         self.LOGIN = env_service.get_env_var('LOGIN')
         self.PASSWORD = env_service.get_env_var('PASSWORD')
+
     def send_feedback_email(self, subject, body, attached_files=None, recipient="rzovliev@gmail.com"):
         """Отправляет письмо с обратной связью и прикрепленными файлами"""
         if attached_files is None:
