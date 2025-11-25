@@ -11,6 +11,7 @@ from service.emailservice import EmailService
 from tkinter import scrolledtext, messagebox, Toplevel, filedialog
 import smtplib
 from modalreport import ModalReport
+from modalinfo import ModalInfo
 from .UI.ui import *
 from .UI.header import Header
 import os
@@ -25,6 +26,7 @@ class AppGUI:
         self.setup_logging()  # Затем настраиваем логирование
         self.email_service = EmailService()
         self.modal_report = ModalReport(self.root, self.email_service)
+        self.modal_info = ModalInfo(self.root)
     
     def setup_logging(self):
         """Настройка логирования - ВЫЗЫВАЕТСЯ ПОСЛЕ создания console_text"""
@@ -56,6 +58,7 @@ class AppGUI:
         
         # Футер
         self.create_footer()
+
         
         # Тестовые логи для демонстрации
         logging.info("🚀 Приложение KLIK KLAK запущено")
@@ -240,7 +243,19 @@ class AppGUI:
         footer_frame = tk.Frame(self.root, bg="#1E2B3E", height=30)
         footer_frame.pack(fill="x", side="bottom", padx=20, pady=5)
 
-        # Кнопка обратной связи
+        # Кнопка информации (теперь слева)
+        info_btn = tk.Label(
+            footer_frame,
+            text="ℹ Информаиця",
+            font=("Arial", 9, "underline"),
+            fg="#4FC3F7",
+            bg="#1E2B3E",
+            cursor="hand2"
+        )
+        info_btn.pack(side="left", padx=10) 
+        info_btn.bind("<Button-1>", lambda e: self.modal_info.open_windowinfo())
+
+        # Кнопка обратной связи 
         feedback_btn = tk.Label(
             footer_frame,
             text="📧 Сообщить об ошибке",
@@ -249,8 +264,7 @@ class AppGUI:
             bg="#1E2B3E",
             cursor="hand2"
         )
-        feedback_btn.pack(side="right", padx=10)
-        # Используйте self.modal_report вместо ModalReport
+        feedback_btn.pack(side="right", padx=10) 
         feedback_btn.bind("<Button-1>", lambda e: self.modal_report.open_feedback_window())
 
     def write_to_console(self, message, level=logging.INFO):
