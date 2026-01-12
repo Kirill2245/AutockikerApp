@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import logging
 
 class CoreLogic:
-    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter, core_instance=None):
+    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter, core_instance=None, is_refresh_page = True):
         self.driver = driver
         self.max_retries = max_retries
         self.timeout = timeout
@@ -16,7 +16,59 @@ class CoreLogic:
         self.classModal = classModal
         self.emitter = emitter
         self.core_instance = core_instance
+        self.is_refresh_page = is_refresh_page
+        self.refresh_task = None  
+        
+    async def start_page_refresh(self):
+        """Запускает периодическое обновление страницы"""
+        self.refresh_task = asyncio.create_task(self._refresh_page_periodically())
+        
+    async def stop_page_refresh(self):
+        """Останавливает обновление страницы"""
+        if self.refresh_task:
+            self.refresh_task.cancel()
+            try:
+                await self.refresh_task
+            except asyncio.CancelledError:
+                pass
+            self.refresh_task = None
+            print("🛑 Обновление страницы остановлено")
     
+    async def _refresh_page_periodically(self):
+        """Обновляет страницу каждые 8 секунд"""
+        refresh_interval = 8  # Секунды
+        
+        try:
+            while self.core_instance is None or not self.core_instance._stop_requested:
+                await asyncio.sleep(refresh_interval)
+                
+                if self.core_instance and self.core_instance._stop_requested:
+                    break
+                    
+                try:
+                    print("🔄 Обновляю страницу...")
+                    await self.log(f"🔄 Обновляю страницу (интервал: {refresh_interval} сек)", logging.INFO)
+                    
+                    # Сохраняем текущий URL перед обновлением
+                    current_url = self.driver.current_url
+                    
+                    # Обновляем страницу
+                    self.driver.refresh()
+                    
+                    # Ждем загрузки страницы
+                    await asyncio.sleep(2)
+                    
+                    print(f"✅ Страница обновлена. URL: {current_url}")
+                    await self.log(f"✅ Страница успешно обновлена", logging.INFO)
+                    
+                except Exception as e:
+                    print(f"❌ Ошибка при обновлении страницы: {e}")
+                    await self.log(f"❌ Ошибка при обновлении страницы: {e}", logging.ERROR)
+                    
+        except asyncio.CancelledError:
+            print("🛑 Задача обновления страницы отменена")
+            raise
+            
     async def wait_for_element(self, driver, by, value, timeout):
         try:
             element = WebDriverWait(driver, timeout).until(
@@ -91,7 +143,12 @@ class CoreLogic:
             print(f"Элемент не найден по CSS: {css_selector}, ошибка: {e}")
             await self.log(f"Элемент не найден по CSS: {css_selector}, ошибка: {e}", logging.WARNING)
         return None
+    
     async def monitor_dynamic_elements_simple(self):
+        # Запускаем обновление страницы перед началом мониторинга
+        if self.is_refresh_page == True:
+            await self.start_page_refresh()
+        
         last_count = 0
         processed_count = 0  # Счетчик обработанных элементов
         
@@ -230,4 +287,6 @@ class CoreLogic:
                 await self.log(f"❌ Общая ошибка мониторинга: {e}", logging.ERROR)
                 await asyncio.sleep(self.timeout // 3)
         
+        # Останавливаем обновление страницы при остановке мониторинга
+        await self.stop_page_refresh()
         await self.log("🛑 Мониторинг остановлен по запросу", logging.INFO)

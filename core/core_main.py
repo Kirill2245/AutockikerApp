@@ -5,9 +5,13 @@ import os
 import sys
 import psutil
 import time
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 from emitter import global_emitter
 
 class Core:
@@ -52,7 +56,26 @@ class Core:
             
         except Exception as e:
             print(f"Ошибка при завершении процессов: {e}")
-    
+
+    def _kill_firefox_processes(self):
+        """Завершает процессы Firefox и Geckodriver"""
+        try:
+            processes_to_kill = ['firefox', 'geckodriver']
+            
+            for process in psutil.process_iter(['pid', 'name']):
+                try:
+                    process_name = process.info['name'].lower()
+                    if any(browser in process_name for browser in processes_to_kill):
+                        process.terminate()
+                        print(f"Завершен процесс: {process.info['name']} (PID: {process.info['pid']})")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            
+            time.sleep(2)  # Даем время для завершения
+            
+        except Exception as e:
+            print(f"Ошибка при завершении процессов Firefox: {e}")
+
     def _create_chrome_driver(self):
         """Создает драйвер Chrome - простой и надежный способ"""
         try:
@@ -82,10 +105,24 @@ class Core:
         except Exception as e:
             print(f"❌ Ошибка запуска Chrome: {e}")
             return None
-    
+        
+    def _create_fire_fox_driver(self):
+        try:
+            print("🔄 Запускаем FireFox...")
+            self._kill_chrome_processes()
+            self._kill_firefox_processes()
+            service = Service(GeckoDriverManager().install())
+            options = Options()
+            driver = webdriver.Firefox(service=service, options=options)
+            print("✅ FireFox успешно запущен!")
+            return driver
+        except Exception as e:
+            print(f"❌ Ошибка запуска FireFox: {e}")
+            return None
+        
     async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
                             classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
-                            classModal="MuiDrawer-paperAnchorRight"):
+                            classModal="MuiDrawer-paperAnchorRight", brouser = True):
         """Запуск основного процесса"""
         
         if self.is_running:
@@ -99,15 +136,16 @@ class Core:
         try:
             await self.log("🚀 Начинаем основной процесс...")
             
-            # Создаем драйвер Chrome
-            self.driver = self._create_chrome_driver()
-            
+            if brouser == True:
+                self.driver = self._create_chrome_driver()
+            else:
+                self.driver = self._create_fire_fox_driver()
             if not self.driver:
-                await self.log("❌ Не удалось запустить Chrome")
+                await self.log("❌ Не удалось запустить Браузер")
                 self.is_running = False
                 return
             
-            await self.log("🚀 Chrome запущен, загружаем страницу...")
+            await self.log("🚀 Браузер запущен, загружаем страницу...")
 
             # Загружаем страницу
             try:
@@ -180,6 +218,7 @@ class Core:
             
             # Убиваем процессы
             self._kill_chrome_processes()
+            self._kill_firefox_processes()
             
         except Exception as e:
             await self.log(f"⚠️ Ошибка при закрытии: {e}")

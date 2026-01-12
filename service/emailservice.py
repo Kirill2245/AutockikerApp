@@ -9,8 +9,10 @@ from config.settings import env_service
 class EmailService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.LOGIN = env_service.get_env_var('LOGIN')
-        self.PASSWORD = env_service.get_env_var('PASSWORD')
+        # self.LOGIN = env_service.get_env_var('LOGIN')
+        # self.PASSWORD = env_service.get_env_var('PASSWORD')
+        self.LOGIN = "rzovliev@gmail.com"
+        self.PASSWORD = "tqjh quxn qolv uglf"
 
     def send_feedback_email(self, subject, body, attached_files=None, recipient="rzovliev@gmail.com"):
         """Отправляет письмо с обратной связью и прикрепленными файлами"""
