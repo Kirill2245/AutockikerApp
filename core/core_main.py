@@ -122,7 +122,7 @@ class Core:
         
     async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
                             classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
-                            classModal="MuiDrawer-paperAnchorRight", brouser = True):
+                            classModal="MuiDrawer-paperAnchorRight", is_browser = True):
         """Запуск основного процесса"""
         
         if self.is_running:
@@ -136,7 +136,7 @@ class Core:
         try:
             await self.log("🚀 Начинаем основной процесс...")
             
-            if brouser == True:
+            if is_browser:
                 self.driver = self._create_chrome_driver()
             else:
                 self.driver = self._create_fire_fox_driver()

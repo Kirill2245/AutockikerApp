@@ -410,7 +410,7 @@ class AppGUI:
             asyncio.set_event_loop(loop)
             try:
                 if self.core:
-                    loop.run_until_complete(self.core.run_main_process(url, timeout, max_retries, classOneClick, classTwoClick, classModal, False))
+                    loop.run_until_complete(self.core.run_main_process(url, timeout, max_retries, classOneClick, classTwoClick, classModal))
                 else:
                     logging.info(f"🔧 Запущен демо-процесс для {url}")
                     loop.run_until_complete(self.demo_process(url))
