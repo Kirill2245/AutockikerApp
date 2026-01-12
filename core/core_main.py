@@ -122,7 +122,7 @@ class Core:
         
     async def run_main_process(self, url="http://localhost:5173/", timeout=0.5, max_retries=3, 
                             classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
-                            classModal="MuiDrawer-paperAnchorRight", is_browser = True):
+                            classModal="MuiDrawer-paperAnchorRight", is_browser = False):
         """Запуск основного процесса"""
         
         if self.is_running:

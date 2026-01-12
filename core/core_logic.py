@@ -69,7 +69,14 @@ class CoreLogic:
                     # Логируем информацию об элементе перед кликом
                     await self.log(f"Кликаем по {element_type}: {element_info}", logging.INFO)
                     
-                    elem.click()
+                    try:
+                        # Пробуем обычный клик
+                        elem.click()
+                    except Exception as click_error:
+                        print(f"Обычный клик не сработал, пробуем JavaScript: {click_error}")
+                        # Fallback: JavaScript клик
+                        self.driver.execute_script("arguments[0].click();", elem)
+                    
                     print(f"Успешный клик по {element_type}")
                     await self.log(f"✅ Успешный клик по {element_type}: {element_info}", logging.INFO)
                     return True
@@ -149,6 +156,31 @@ class CoreLogic:
                                 processed_count += 1  # Все равно считаем обработанным
                                 continue
                             
+                            # Проверяем, нет ли открытых модальных окон
+                            try:
+                                open_modals = self.driver.find_elements(
+                                    By.CSS_SELECTOR, 
+                                    ".MuiDrawer-paper, .MuiModal-root, [role='dialog']"
+                                )
+                                for modal in open_modals:
+                                    try:
+                                        if modal.is_displayed():
+                                            print("⚠️ Найдено открытое модальное окно, закрываем")
+                                            # Ищем кнопку закрытия
+                                            close_btns = modal.find_elements(
+                                                By.CSS_SELECTOR,
+                                                "button, [aria-label='close']"
+                                            )
+                                            for close_btn in close_btns:
+                                                if close_btn.is_displayed():
+                                                    self.driver.execute_script("arguments[0].click();", close_btn)
+                                                    await asyncio.sleep(self.timeout)
+                                                    break
+                                    except:
+                                        continue
+                            except:
+                                pass
+                            
                             if await self.click_element(block, self.max_retries, "строке таблицы"):
                                 print(f"✅ Кликнули на строку таблицы {i+1}")
                                 await self.log(f"✅ Кликнули на строку таблицы {i+1}: {block_info}", logging.INFO)
@@ -162,10 +194,13 @@ class CoreLogic:
                                 if not modal:
                                     all_elements = self.driver.find_elements(By.CLASS_NAME, "MuiDrawer-paperAnchorRight")
                                     for elem in all_elements:
-                                        classes = elem.get_attribute("class")
-                                        if "MuiDrawer-paperAnchorRight" in classes:
-                                            modal = elem
-                                            break
+                                        try:
+                                            classes = elem.get_attribute("class")
+                                            if "MuiDrawer-paperAnchorRight" in classes and elem.is_displayed():
+                                                modal = elem
+                                                break
+                                        except:
+                                            continue
                                 
                                 if not modal:
                                     await self.log("❌ Модальное окно с классом MuiDrawer-paperAnchorRight не найдено", logging.CRITICAL)
@@ -199,9 +234,31 @@ class CoreLogic:
                                 button_info = self._get_element_info(button)
                                 await self.log(f"🔘 Найдена кнопка 'Принять': {button_info}", logging.INFO)
                                 
+                                # КЛИКАЕМ НА КНОПКУ "ПРИНЯТЬ"
                                 if await self.click_element(button, self.max_retries, "кнопке 'Принять'"):
                                     print(f"✅ Кликнули на кнопку 'Принять' {i+1}")
                                     await self.log(f"✅ Кликнули на кнопку 'Принять' {i+1}: {button_info}", logging.INFO)
+                                    
+                                    # Даем время на обработку
+                                    await asyncio.sleep(self.timeout * 4)
+                                    
+                                    # Проверяем, закрылась ли модалка
+                                    try:
+                                        if modal.is_displayed():
+                                            print("⚠️ Модальное окно не закрылось автоматически")
+                                            # Пробуем закрыть модалку вручную
+                                            close_btns = modal.find_elements(
+                                                By.CSS_SELECTOR,
+                                                "button, [aria-label='close'], svg"
+                                            )
+                                            for close_btn in close_btns:
+                                                if close_btn.is_displayed():
+                                                    self.driver.execute_script("arguments[0].click();", close_btn)
+                                                    await asyncio.sleep(1)
+                                                    break
+                                    except:
+                                        pass
+                                    
                                 else:
                                     await self.log(f"❌ Не удалось кликнуть на кнопку 'Принять' {i+1}", logging.ERROR)
                                 
@@ -217,7 +274,8 @@ class CoreLogic:
                             await self.log(f"❌ Ошибка с элементом {i+1}: {e}", logging.ERROR)
                             processed_count += 1  # Считаем обработанным даже при ошибке
                         
-                        await asyncio.sleep(self.timeout / 10)
+                        # Пауза между обработкой строк
+                        await asyncio.sleep(self.timeout * 4)
                     
                     # Обновляем общий счетчик
                     last_count = current_count
