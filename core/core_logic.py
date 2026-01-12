@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import logging
 
 class CoreLogic:
-    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter, core_instance=None):
+    def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, classModal, emitter, core_instance=None, is_refresh = True, time_refresh = 8):
         self.driver = driver
         self.max_retries = max_retries
         self.timeout = timeout
@@ -16,7 +16,63 @@ class CoreLogic:
         self.classModal = classModal
         self.emitter = emitter
         self.core_instance = core_instance
-    
+        self.is_clicking = False
+        self.is_refresh = is_refresh
+        self.time_refresh = time_refresh
+        self.last_reset_time
+    async def _start_background_refresh(self):
+        """Запускает фоновое обновление страницы каждые 8 секунд"""
+        # Ждем 2 минуты перед первым обновлением
+        print("⏳ Ждем 2 минуты перед началом фонового обновления...")
+        await asyncio.sleep(60)  # 2 минуты = 120 секунд
+        
+        refresh_counter = 0
+        
+        while self.core_instance is None or not self.core_instance._stop_requested:
+            try:
+                refresh_counter += 1
+                
+                # Проверяем, не кликаем ли мы сейчас
+                if hasattr(self, 'is_clicking') and self.is_clicking:
+                    print(f"🔄 Пропускаем обновление #{refresh_counter} - идет процесс кликов")
+                    await asyncio.sleep(self.time_refresh)  # Ждем еще 8 секунд
+                    continue
+                
+                print(f"🔄 Фоновое обновление страницы #{refresh_counter}")
+                await self.log(f"🔄 Фоновое обновление страницы #{refresh_counter}", logging.INFO)
+                
+                # Сохраняем текущий URL
+                current_url = self.driver.current_url
+                
+                # Обновляем страницу
+                self.driver.refresh()
+                
+                # Ждем загрузки страницы
+                await asyncio.sleep(3)
+                
+                # Проверяем, что мы на той же странице
+                if self.driver.current_url != current_url:
+                    print(f"⚠️ После обновления URL изменился: {self.driver.current_url}")
+                    await self.log(f"⚠️ После обновления URL изменился", logging.WARNING)
+                
+                # Ждем полной загрузки
+                try:
+                    WebDriverWait(self.driver, 10).until(
+                        lambda d: d.execute_script('return document.readyState') == 'complete'
+                    )
+                except:
+                    pass
+                
+                print(f"✅ Страница обновлена #{refresh_counter}")
+                await self.log(f"✅ Страница успешно обновлена #{refresh_counter}", logging.INFO)
+                
+                # Ждем 8 секунд до следующего обновления
+                await asyncio.sleep(self.time_refresh)
+                
+            except Exception as e:
+                print(f"❌ Ошибка при фоновом обновлении: {e}")
+                await self.log(f"❌ Ошибка при фоновом обновлении: {e}", logging.ERROR)
+                await asyncio.sleep(8)  # Ждем перед следующей попыткой
     async def wait_for_element(self, driver, by, value, timeout):
         try:
             element = WebDriverWait(driver, timeout).until(
@@ -100,10 +156,22 @@ class CoreLogic:
         return None
     async def monitor_dynamic_elements_simple(self):
         last_count = 0
-        processed_count = 0  # Счетчик обработанных элементов
+        processed_count = 0  
+        self.is_clicking = False
+        self.last_reset_time = asyncio.get_event_loop().time()
+        if self.is_refresh:
+            asyncio.create_task(self._start_background_refresh())
         
         while self.core_instance is None or not self.core_instance._stop_requested:
             try:
+                current_time = asyncio.get_event_loop().time()
+                if (current_time - self.last_reset_time >= 65):  # 5 минут = 300 секунд
+                    print("⏰ Прошло 5 минут, сбрасываем счетчики для повторной проверки всех элементов")
+                    await self.log("⏰ Прошло 5 минут, сбрасываем счетчики для повторной проверки всех элементов", logging.INFO)
+                    last_count = 0
+                    processed_count = 0
+                    self.last_reset_time = current_time
+                    await asyncio.sleep(2)
                 blocks = self.driver.find_elements(By.CLASS_NAME, self.classOneClick)
                 if not blocks:
                     blocks = self.driver.find_elements(By.CLASS_NAME, "MuiTableRow-root")
