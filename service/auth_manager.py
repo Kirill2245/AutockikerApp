@@ -2,7 +2,8 @@ import os
 from config.settings import env_service
 from datebase_service import db_service
 from detected_device import detected_device
-
+from pathlib import Path
+import getpass
 class AuthManager:
     def __init__(self):
         self.is_authenticated = False
@@ -12,11 +13,40 @@ class AuthManager:
         self.oauth_token = "y0__xDD0OCrBRjblgMg9-z6qhW5_m8Dq2c_V4cpAP-EAM53ucT-sw"
         self.file_path = "/BaseUserAuto.xlsx"
         self.users_data = []
-        self.auth_file = r"C:\Users\Kirill\auth_data.txt"
+        self.auth_file = self._get_auth_file_path()
         
         # Пытаемся автоматически авторизоваться по сохраненным данным
         self.auto_login_from_file()
-    
+    def _get_auth_file_path(self):
+        """Автоматически определяет путь к файлу авторизации на основе текущего пользователя"""
+        try:
+            # Получаем имя текущего пользователя системы
+            current_user = getpass.getuser()
+            
+            # Определяем ОС и создаем соответствующий путь
+            if os.name == 'nt':  # Windows
+                # Вариант 1: В папке пользователя (AppData)
+                auth_file = Path.home() / "auth_data.txt"
+                
+                # Или вариант 2: В рабочем столе (для тестирования)
+                # auth_file = Path.home() / "Desktop" / "auth_data.txt"
+                
+            else:  # Linux/Mac
+                # Для Unix-подобных систем
+                auth_file = Path.home() / "auth_data.txt"
+            
+            # Создаем директорию если не существует
+            auth_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            print(f"📁 Путь к файлу авторизации: {auth_file}")
+            print(f"👤 Текущий пользователь системы: {current_user}")
+            
+            return str(auth_file)
+            
+        except Exception as e:
+            print(f"⚠️ Не удалось определить путь автоматически: {e}")
+            # Возвращаем путь по умолчанию
+            return str(Path.home() / "auth_data.txt")
     def auto_login_from_file(self):
         """Пытается авторизоваться по данным из файла"""
         if os.path.exists(self.auth_file):

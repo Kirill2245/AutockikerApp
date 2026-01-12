@@ -165,7 +165,7 @@ class CoreLogic:
         while self.core_instance is None or not self.core_instance._stop_requested:
             try:
                 current_time = asyncio.get_event_loop().time()
-                if (current_time - self.last_reset_time >= 65):  # 5 минут = 300 секунд
+                if (current_time - self.last_reset_time >= 65): 
                     print("⏰ Прошло 5 минут, сбрасываем счетчики для повторной проверки всех элементов")
                     await self.log("⏰ Прошло 5 минут, сбрасываем счетчики для повторной проверки всех элементов", logging.INFO)
                     last_count = 0
