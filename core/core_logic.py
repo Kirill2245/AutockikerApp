@@ -1,9 +1,9 @@
 # core/core_logic.py
 import asyncio
 import logging
-from .web_helpers import WebHelpers
-from core.background_refresher import BackgroundRefresher
-from core.element_monitor import ElementMonitor
+from .utils.web_helpers import WebHelpers
+from .utils.background_refresher import BackgroundRefresher
+from .utils.element_monitor import ElementMonitor
 
 class CoreLogic:
     def __init__(self, driver, max_retries, timeout, classOneClick, classTwoClick, 

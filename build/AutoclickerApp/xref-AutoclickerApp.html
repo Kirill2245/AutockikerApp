@@ -3884,6 +3884,9 @@ imported by:
  &#8226;   <a href="#asyncio.windows_utils">asyncio.windows_utils</a>
  &#8226;   <a href="#core.core_logic">core.core_logic</a>
  &#8226;   <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.background_refresher">core.utils.background_refresher</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#google.auth._exponential_backoff">google.auth._exponential_backoff</a>
  &#8226;   <a href="#gui.app_gui">gui.app_gui</a>
  &#8226;   <a href="#main.py">main.py</a>
@@ -6697,7 +6700,7 @@ imported by:
 
 <div class="node">
   <a name="config"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/config/__init__.py" type="text/plain"><tt>config</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/config/__init__.py" type="text/plain"><tt>config</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#config.settings">config.settings</a>
@@ -6709,7 +6712,7 @@ imported by:
 
 <div class="node">
   <a name="config.settings"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/config/settings.py" type="text/plain"><tt>config.settings</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/config/settings.py" type="text/plain"><tt>config.settings</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#config">config</a>
@@ -6981,11 +6984,12 @@ imported by:
 
 <div class="node">
   <a name="core"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/__init__.py" type="text/plain"><tt>core</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/__init__.py" type="text/plain"><tt>core</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#core.core_logic">core.core_logic</a>
  &#8226;   <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils">core.utils</a>
 
   </div>
 
@@ -6993,19 +6997,15 @@ imported by:
 
 <div class="node">
   <a name="core.core_logic"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_logic.py" type="text/plain"><tt>core.core_logic</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_logic.py" type="text/plain"><tt>core.core_logic</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
  &#8226;   <a href="#core">core</a>
+ &#8226;   <a href="#core.utils.background_refresher">core.utils.background_refresher</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#logging">logging</a>
- &#8226;   <a href="#selenium.common">selenium.common</a>
- &#8226;   <a href="#selenium.common.exceptions">selenium.common.exceptions</a>
- &#8226;   <a href="#selenium.webdriver.common.by">selenium.webdriver.common.by</a>
- &#8226;   <a href="#selenium.webdriver.support">selenium.webdriver.support</a>
- &#8226;   <a href="#selenium.webdriver.support.expected_conditions">selenium.webdriver.support.expected_conditions</a>
- &#8226;   <a href="#selenium.webdriver.support.ui">selenium.webdriver.support.ui</a>
- &#8226;   <a href="#undetected_chromedriver">undetected_chromedriver</a>
 
   </div>
   <div class="import">
@@ -7018,7 +7018,7 @@ imported by:
 
 <div class="node">
   <a name="core.core_main"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_main.py" type="text/plain"><tt>core.core_main</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/core_main.py" type="text/plain"><tt>core.core_main</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
@@ -7045,6 +7045,86 @@ imports:
   <div class="import">
 imported by:
     <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.utils"></a>
+  <a target="code" href="-" type="text/plain"><tt>core.utils</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#core">core</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#core.utils.background_refresher">core.utils.background_refresher</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.utils.background_refresher"></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/utils/background_refresher.py" type="text/plain"><tt>core.utils.background_refresher</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#asyncio">asyncio</a>
+ &#8226;   <a href="#core.utils">core.utils</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#selenium.webdriver.support.ui">selenium.webdriver.support.ui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#core.core_logic">core.core_logic</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.utils.element_monitor"></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/utils/element_monitor.py" type="text/plain"><tt>core.utils.element_monitor</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#asyncio">asyncio</a>
+ &#8226;   <a href="#core.utils">core.utils</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#selenium.webdriver.common.by">selenium.webdriver.common.by</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#core.core_logic">core.core_logic</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.utils.web_helpers"></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/core/utils/web_helpers.py" type="text/plain"><tt>core.utils.web_helpers</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#asyncio">asyncio</a>
+ &#8226;   <a href="#core.utils">core.utils</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#selenium.webdriver.common.by">selenium.webdriver.common.by</a>
+ &#8226;   <a href="#selenium.webdriver.support">selenium.webdriver.support</a>
+ &#8226;   <a href="#selenium.webdriver.support.expected_conditions">selenium.webdriver.support.expected_conditions</a>
+ &#8226;   <a href="#selenium.webdriver.support.ui">selenium.webdriver.support.ui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#core.core_logic">core.core_logic</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
 
   </div>
 
@@ -9216,7 +9296,7 @@ imported by:
 
 <div class="node">
   <a name="emitter"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/emitter.py" type="text/plain"><tt>emitter</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/emitter.py" type="text/plain"><tt>emitter</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#logging">logging</a>
@@ -12335,6 +12415,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#google.oauth2.challenges">google.oauth2.challenges</a>
+ &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
 
   </div>
 
@@ -13870,7 +13951,7 @@ imported by:
 
 <div class="node">
   <a name="gui"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/__init__.py" type="text/plain"><tt>gui</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/__init__.py" type="text/plain"><tt>gui</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#gui.UI">gui.UI</a>
@@ -13900,7 +13981,7 @@ imported by:
 
 <div class="node">
   <a name="gui.UI.header"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/header.py" type="text/plain"><tt>gui.UI.header</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/header.py" type="text/plain"><tt>gui.UI.header</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#gui.UI">gui.UI</a>
@@ -13918,7 +13999,7 @@ imported by:
 
 <div class="node">
   <a name="gui.UI.ui"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/ui.py" type="text/plain"><tt>gui.UI.ui</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/UI/ui.py" type="text/plain"><tt>gui.UI.ui</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#emitter">emitter</a>
@@ -13938,7 +14019,7 @@ imported by:
 
 <div class="node">
   <a name="gui.app_gui"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/app_gui.py" type="text/plain"><tt>gui.app_gui</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/app_gui.py" type="text/plain"><tt>gui.app_gui</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#asyncio">asyncio</a>
@@ -13973,7 +14054,7 @@ imported by:
 
 <div class="node">
   <a name="gui.autorform"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/autorform.py" type="text/plain"><tt>gui.autorform</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/gui/autorform.py" type="text/plain"><tt>gui.autorform</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#gui">gui</a>
@@ -15773,6 +15854,9 @@ imported by:
  &#8226;   <a href="#concurrent.futures._base">concurrent.futures._base</a>
  &#8226;   <a href="#core.core_logic">core.core_logic</a>
  &#8226;   <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.background_refresher">core.utils.background_refresher</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#dotenv.main">dotenv.main</a>
  &#8226;   <a href="#emitter">emitter</a>
  &#8226;   <a href="#google.auth">google.auth</a>
@@ -42011,6 +42095,7 @@ imported by:
  &#8226;   <a href="#selenium.webdriver.common.driver_finder">selenium.webdriver.common.driver_finder</a>
  &#8226;   <a href="#selenium.webdriver.common.selenium_manager">selenium.webdriver.common.selenium_manager</a>
  &#8226;   <a href="#selenium.webdriver.remote.file_detector">selenium.webdriver.remote.file_detector</a>
+ &#8226;   <a href="#service.auth_manager">service.auth_manager</a>
  &#8226;   <a href="#setuptools._distutils.compilers.C.base">setuptools._distutils.compilers.C.base</a>
  &#8226;   <a href="#setuptools._distutils.dir_util">setuptools._distutils.dir_util</a>
  &#8226;   <a href="#setuptools._distutils.dist">setuptools._distutils.dist</a>
@@ -45297,8 +45382,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#selenium.common.exceptions">selenium.common.exceptions</a>
+    <a href="#selenium.common.exceptions">selenium.common.exceptions</a>
  &#8226;   <a href="#selenium.webdriver.common.selenium_manager">selenium.webdriver.common.selenium_manager</a>
  &#8226;   <a href="#selenium.webdriver.remote.websocket_connection">selenium.webdriver.remote.websocket_connection</a>
 
@@ -45318,8 +45402,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#selenium.common">selenium.common</a>
+    <a href="#selenium.common">selenium.common</a>
  &#8226;   <a href="#selenium.webdriver.common.actions.pointer_input">selenium.webdriver.common.actions.pointer_input</a>
  &#8226;   <a href="#selenium.webdriver.common.bidi.script">selenium.webdriver.common.bidi.script</a>
  &#8226;   <a href="#selenium.webdriver.common.bidi.webextension">selenium.webdriver.common.bidi.webextension</a>
@@ -46252,8 +46335,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#core.core_main">core.core_main</a>
+    <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.element_monitor">core.utils.element_monitor</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#selenium.webdriver.remote.locator_converter">selenium.webdriver.remote.locator_converter</a>
  &#8226;   <a href="#selenium.webdriver.remote.shadowroot">selenium.webdriver.remote.shadowroot</a>
@@ -47532,8 +47616,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#core.core_main">core.core_main</a>
+    <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#selenium.webdriver.support.expected_conditions">selenium.webdriver.support.expected_conditions</a>
  &#8226;   <a href="#selenium.webdriver.support.relative_locator">selenium.webdriver.support.relative_locator</a>
@@ -47561,8 +47645,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#core.core_main">core.core_main</a>
+    <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#selenium.webdriver.support">selenium.webdriver.support</a>
 
@@ -47622,8 +47706,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#core.core_main">core.core_main</a>
+    <a href="#core.core_main">core.core_main</a>
+ &#8226;   <a href="#core.utils.background_refresher">core.utils.background_refresher</a>
+ &#8226;   <a href="#core.utils.web_helpers">core.utils.web_helpers</a>
 
   </div>
 
@@ -47817,7 +47902,7 @@ imported by:
 
 <div class="node">
   <a name="service"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/__init__.py" type="text/plain"><tt>service</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/__init__.py" type="text/plain"><tt>service</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
     <a href="#service.auth_manager">service.auth_manager</a>
@@ -47829,13 +47914,15 @@ imported by:
 
 <div class="node">
   <a name="service.auth_manager"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/auth_manager.py" type="text/plain"><tt>service.auth_manager</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/auth_manager.py" type="text/plain"><tt>service.auth_manager</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#config.settings">config.settings</a>
  &#8226;   <a href="#datebase_service">datebase_service</a>
  &#8226;   <a href="#detected_device">detected_device</a>
+ &#8226;   <a href="#getpass">getpass</a>
  &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
  &#8226;   <a href="#service">service</a>
 
   </div>
@@ -47851,7 +47938,7 @@ imported by:
 
 <div class="node">
   <a name="service.emailservice"></a>
-  <a target="code" href="///c:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/emailservice.py" type="text/plain"><tt>service.emailservice</tt></a>
+  <a target="code" href="///C:/Users/Kirill/Desktop/.vs/Phyton/AutockikerApp/service/emailservice.py" type="text/plain"><tt>service.emailservice</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#config.settings">config.settings</a>
@@ -54923,8 +55010,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#core.core_logic">core.core_logic</a>
- &#8226;   <a href="#core.core_main">core.core_main</a>
+    <a href="#core.core_main">core.core_main</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#undetected_chromedriver.cdp">undetected_chromedriver.cdp</a>
  &#8226;   <a href="#undetected_chromedriver.dprocess">undetected_chromedriver.dprocess</a>
