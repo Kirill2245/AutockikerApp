@@ -16,18 +16,39 @@ from .UI.ui import *
 from .UI.header import Header
 import os
 import config as cfg
+import json
+import base64
+import hashlib
+from cryptography.fernet import Fernet
 
 class AppGUI:
     def __init__(self, root, core_instance=None):
         self.root = root
         self.core = core_instance
         self.header = Header(self.root)
+        self.encryption_key = self._get_encryption_key() # Ключ для шифрования (можно сохранить в отдельный файл или использовать фиксированный)
         self.setup_ui()  # Сначала создаем UI
         self.setup_logging()  # Затем настраиваем логирование
         self.email_service = EmailService()
         self.modal_report = ModalReport(self.root, self.email_service)
         self.modal_info = ModalInfo(self.root)
-    
+
+        # Загружаем сохраненную конфигурацию
+        self.load_config()
+
+    def _get_encryption_key(self):
+        "Получаем или создаем ключ шифрования"
+        key_path = os.path.join(os.path.dirname(__file__), 'config_key.key')
+        if os.path.exists(key_path):
+            with open(key_path, 'rb') as f:
+                return f.read()
+        else:
+            # Создаем новый ключ
+            key = Fernet.generate_key()
+            with open(key_path, 'wb') as f:
+                f.write(key)
+            return key
+        
     def setup_logging(self):
         """Настройка логирования - ВЫЗЫВАЕТСЯ ПОСЛЕ создания console_text"""
         # Проверяем что console_text существует
@@ -180,21 +201,24 @@ class AppGUI:
         self.time_refresh_entry.place(x=30, y=input_y + field_spacing*5 + 45)
         
         # Позиция для кнопки и чекбокса Firefox
-        buttons_y = input_y + field_spacing*6 + 70
+        buttons_y = input_y + field_spacing*6 + 40
         
         # Кнопка Save and Run
         self.save_run_btn = tk.Button(
             settings_container,
-            text="Сохранить Конфиг",
+            text="Сохранить и Запустить",
             command=self.on_save_run,
             bg="#2196F3",
             fg="white",
             font=("Arial", 11, "bold"),
-            width=15,
+            width=20,
             height=1,
             relief="flat"
         )
         self.save_run_btn.place(x=25, y=buttons_y)
+
+        # Привязываем правый клик для сохранения без запуска
+        self.save_run_btn.bind("<Button-3>", lambda e: self.save_config_only())
         
         # ЧЕКБОКС ФАЕРФОКС
         self.is_browser = tk.BooleanVar(value=False)
@@ -211,7 +235,7 @@ class AppGUI:
             font=("Arial", 10),
             anchor="w"
         )
-        self.firefox_checkbox.place(x=180, y=buttons_y)
+        self.firefox_checkbox.place(x=23, y=buttons_y + 75)
         
         # Кнопки Запуск/Стоп
         self.run_btn = tk.Button(
@@ -239,6 +263,11 @@ class AppGUI:
             relief="flat"
         )
         self.stop_btn.place(x=165, y=buttons_y + 40)
+
+    def save_config_only(self):
+        "Сохраняет конфиг без запуска процесса"
+        if self.save_config():
+            logging.info("✅ Конфигурация сохранена")
 
     def toggle_refresh_entry(self):
         "Активация/деактивация поля времени перезагрузки"
@@ -425,7 +454,11 @@ class AppGUI:
 
     def on_save_run(self):
         """Обработчик кнопки Save and Run"""
-        #cостояние чекбокса
+        # Сохраняем конфигурацию
+        self.save_config()
+
+
+        # Получаем состояние чекбоксов
         is_browser = self.is_browser.get() if hasattr(self, 'is_browser') else True
         is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
         time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
@@ -442,6 +475,7 @@ class AppGUI:
             'timeout': float(self.timeout_entry.get()) if self.timeout_entry.get().strip() else 0.5,
             'max_retries': int(self.retries_entry.get()) if self.retries_entry.get().strip() else 3,
             'is_browser': is_browser,
+            'is_refresh': is_refresh,
             'time_refresh': time_refresh
         }
         
@@ -489,6 +523,11 @@ class AppGUI:
             is_browser = self.is_browser.get() if hasattr(self, 'is_browser') else True
             is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
             time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
+            
+            # ПРАВИЛЬНОЕ ИМЯ ПЕРЕМЕННОЙ
+            timeout = float(self.timeout_entry.get()) if self.timeout_entry.get().strip() else 0.5
+            max_retries = int(self.retries_entry.get()) if self.retries_entry.get().strip() else 3
+            
             logging.info(f"🚀 Запуск процесса для URL: {url}")
             logging.info(f"📧 Email: {email}")
             logging.info(f"🔐 Пароль: {'*' * len(password)}")
@@ -497,9 +536,16 @@ class AppGUI:
             if is_refresh:
                 logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
 
-
-            self.start_process(url)
-            self.start_process(email_user=email,password_user=password, url=url, is_browser=is_browser, is_refresh=is_refresh, time_refresh=time_refresh)
+            self.start_process(
+                email_user=email,
+                password_user=password,
+                url=url,
+                timeout=timeout,  
+                max_retries=max_retries,
+                is_browser=is_browser,
+                is_refresh=is_refresh,
+                time_refresh=time_refresh
+            )
         else:
             missing = []
             if not url:
@@ -531,6 +577,114 @@ class AppGUI:
         thread = threading.Thread(target=stop_async)
         thread.daemon = True
         thread.start()
+    
+    def save_config(self):
+        "Сохраняет конфигурацию в файл"
+        try:
+            config = {
+                'url': self.url_entry.get(),
+                'email': self.email_entry.get(),
+                'password': self._encrypt_password(self.password_entry.get()),
+                'timeout': self.timeout_entry.get(),
+                'max_retries': self.retries_entry.get(),
+                'is_browser': self.is_browser.get(),
+                'is_refresh': self.is_refresh.get(),
+                'time_refresh': self.time_refresh_entry.get(),
+                'show_password': self.show_password.get()
+            }
+            
+            # Фильтруем пустые значения
+            config = {k: v for k, v in config.items() if v is not None and v != ''}
+            
+            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            
+            logging.info("✅ Конфигурация сохранена")
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка сохранения конфигурации: {e}")
+            return False
+    
+    def load_config(self):
+        "Загружает конфигурацию из файла"
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+            if not os.path.exists(config_path):
+                logging.info("📄 Файл конфигурации не найден, используется конфигурация по умолчанию")
+                return False
+            
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # Устанавливаем значения в поля
+            if 'url' in config:
+                self.url_entry.entry.delete(0, tk.END)
+                self.url_entry.entry.insert(0, config['url'])
+            
+            if 'email' in config:
+                self.email_entry.entry.delete(0, tk.END)
+                self.email_entry.entry.insert(0, config['email'])
+            
+            if 'password' in config:
+                decrypted_password = self._decrypt_password(config['password'])
+                self.password_entry.entry.delete(0, tk.END)
+                self.password_entry.entry.insert(0, decrypted_password)
+            
+            if 'timeout' in config:
+                self.timeout_entry.entry.delete(0, tk.END)
+                self.timeout_entry.entry.insert(0, config['timeout'])
+            
+            if 'max_retries' in config:
+                self.retries_entry.entry.delete(0, tk.END)
+                self.retries_entry.entry.insert(0, config['max_retries'])
+            
+            if 'is_browser' in config:
+                self.is_browser.set(config['is_browser'])
+            
+            if 'is_refresh' in config:
+                self.is_refresh.set(config['is_refresh'])
+                self.toggle_refresh_entry()  # Обновляем состояние поля перезагрузки
+            
+            if 'time_refresh' in config:
+                self.time_refresh_entry.entry.delete(0, tk.END)
+                self.time_refresh_entry.entry.insert(0, config['time_refresh'])
+            
+            if 'show_password' in config:
+                self.show_password.set(config['show_password'])
+                self.toggle_password_visibility()  # Обновляем видимость пароля
+            
+            logging.info("✅ Конфигурация загружена")
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка загрузки конфигурации: {e}")
+            return False
+    
+    def _encrypt_password(self, password):
+        "Шифрует пароль"
+        if not password:
+            return ""
+        try:
+            cipher = Fernet(self.encryption_key)
+            encrypted_password = cipher.encrypt(password.encode())
+            return encrypted_password.decode('utf-8')
+        except Exception:
+            # Если шифрование не удалось, возвращаем как есть (не безопасно)
+            return password
+    
+    def _decrypt_password(self, encrypted_password):
+        "Расшифровывает пароль"
+        if not encrypted_password:
+            return ""
+        try:
+            cipher = Fernet(self.encryption_key)
+            decrypted_password = cipher.decrypt(encrypted_password.encode())
+            return decrypted_password.decode('utf-8')
+        except Exception:
+            # Если расшифровка не удалась, возвращаем как есть
+            return encrypted_password
 
     def start_process(self, email_user, password_user, url, timeout=0.5, max_retries=3,
                       is_browser=False,
