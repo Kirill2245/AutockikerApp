@@ -117,7 +117,7 @@ class Core:
             print(f"❌ Ошибка запуска FireFox: {e}")
             return None
         
-    async def run_main_process(self, url="https://thejwibvoknwefg.org/trader/orders/payout?tab=active&pagination=eyJwYWdlIjoxLCJ0YWtlIjoxMH0%3D&filters=eyJmcm9tIjoiMjAyNi0wMS0wNVQxOTowMDowMC4wMDBaIn0%3D", timeout=0.5, max_retries=3, 
+    async def run_main_process(self,email_user, password_user, url="https://thejwibvoknwefg.org/trader/orders/payout?tab=active&pagination=eyJwYWdlIjoxLCJ0YWtlIjoxMH0%3D&filters=eyJmcm9tIjoiMjAyNi0wMS0wNVQxOTowMDowMC4wMDBaIn0%3D", timeout=0.5, max_retries=3, 
                             classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
                             classModal="MuiDrawer-paperAnchorRight", is_browser = True, is_refresh = True , time_refresh = 20):
         """Запуск основного процесса"""
@@ -154,7 +154,7 @@ class Core:
                 )
                 
                 await self.log("✅ Страница загружена")
-                await self._fill_login_form()
+                await self._fill_login_form(email_user, password_user)
                 
                 # Кликаем на кнопку "Войти"
                 await self._click_login_button()
@@ -199,7 +199,7 @@ class Core:
         finally:
             if not self._stop_requested:
                 await self._safe_quit_driver()
-    async def _fill_login_form(self):
+    async def _fill_login_form(self, email , password):
         """Заполнение формы логина"""
         try:
             
@@ -221,7 +221,7 @@ class Core:
             email_field.clear()
             await self.log("📧 Ввожу email...")
             
-            email_text = "mymrak123@inbox.ru"
+            email_text = email
             for char in email_text:
                 email_field.send_keys(char)
                 await asyncio.sleep(0.03)  # Имитация печати
@@ -231,7 +231,7 @@ class Core:
             password_field.clear()
             await self.log("🔒 Ввожу пароль...")
             
-            password_text = "Parol2006/"
+            password_text = password
             for char in password_text:
                 password_field.send_keys(char)
                 await asyncio.sleep(0.03)
