@@ -43,7 +43,7 @@ class AppGUI:
             return
         
         self.root.title("🚀 KLIK KLAK")
-        self.root.geometry("800x650")
+        self.root.geometry("800x700")
         self.root.configure(bg="#152238")
         self.root.resizable(True, True)
         
@@ -124,39 +124,68 @@ class AppGUI:
         self.retries_entry = ModernEntry(settings_container, placeholder="3", width=25)
         self.retries_entry.place(x=30, y=input_y + field_spacing*2 + 25)
         
-        # Классы для кликов
-        tk.Label(settings_container, text="Класс первого клика", fg="white", bg="#1E2B3E",
-                font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*3)
-        self.first_click_entry = ModernEntry(settings_container, placeholder="MuiTableRow-root", width=25)
-        self.first_click_entry.place(x=30, y=input_y + field_spacing*3 + 25)
+        # ЧЕКБОКС ДЛЯ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ
+        self.is_refresh = tk.BooleanVar(value=True)  # По умолчанию включено
         
-        tk.Label(settings_container, text="Класс второго клика", fg="white", bg="#1E2B3E",
-                font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*4)
-        self.last_click_entry = ModernEntry(settings_container, placeholder="MuiButtonBase-root", width=25)
-        self.last_click_entry.place(x=30, y=input_y + field_spacing*4 + 25)
+        # Чекбокс для перезагрузки
+        self.refresh_checkbox = tk.Checkbutton(
+            settings_container,
+            text="Автоперезагрузка страницы",
+            variable=self.is_refresh,
+            bg="#1E2B3E",
+            fg="white",
+            selectcolor="#1E2B3E",
+            activebackground="#1E2B3E",
+            activeforeground="white",
+            font=("Arial", 10),
+            anchor="w",
+            command=self.toggle_refresh_entry  # Функция для активации/деактивации поля
+        )
+        self.refresh_checkbox.place(x=30, y=input_y + field_spacing*3)
         
-        tk.Label(settings_container, text="Класс модального окна", fg="white", bg="#1E2B3E",
-                font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*5)
-        self.modal_entry = ModernEntry(settings_container, placeholder="MuiPaper-root", width=25)
-        self.modal_entry.place(x=30, y=input_y + field_spacing*5 + 25)
+        # Поле для времени перезагрузки
+        tk.Label(settings_container, text="Интервал перезагрузки (сек)", 
+                fg="#888888", bg="#1E2B3E",
+                font=("Arial", 9)).place(x=30, y=input_y + field_spacing*3 + 25)
         
-        # Кнопки управления
-        buttons_y = input_y + field_spacing*6 + 30
+        self.time_refresh_entry = ModernEntry(settings_container, placeholder="20", width=10)
+        self.time_refresh_entry.place(x=30, y=input_y + field_spacing*3 + 45)
+        
+        # Позиция для кнопки и чекбокса Firefox
+        buttons_y = input_y + field_spacing*4 + 70
         
         # Кнопка Save and Run
         self.save_run_btn = tk.Button(
             settings_container,
-            text="Сохранить и Запустить",
+            text="Сохранить Конфиг",
             command=self.on_save_run,
             bg="#2196F3",
             fg="white",
             font=("Arial", 11, "bold"),
-            width=20,
-            height=2,
+            width=15,
+            height=1,
             relief="flat"
         )
         self.save_run_btn.place(x=25, y=buttons_y)
-
+        
+        # ЧЕКБОКС ФАЕРФОКС
+        self.is_browser = tk.BooleanVar(value=False)
+        
+        self.firefox_checkbox = tk.Checkbutton(
+            settings_container,
+            text="Использовать Firefox",
+            variable=self.is_browser,
+            bg="#1E2B3E",
+            fg="white",
+            selectcolor="#1E2B3E",
+            activebackground="#1E2B3E",
+            activeforeground="white",
+            font=("Arial", 10),
+            anchor="w"
+        )
+        self.firefox_checkbox.place(x=180, y=buttons_y)
+        
+        # Кнопки Запуск/Стоп
         self.run_btn = tk.Button(
             settings_container,
             text="Запуск",
@@ -168,7 +197,7 @@ class AppGUI:
             height=1,
             relief="flat"
         )
-        self.run_btn.place(x=25, y=buttons_y + 60)
+        self.run_btn.place(x=25, y=buttons_y + 40)
 
         self.stop_btn = tk.Button(
             settings_container,
@@ -181,7 +210,19 @@ class AppGUI:
             height=1,
             relief="flat"
         )
-        self.stop_btn.place(x=165, y=buttons_y + 60)
+        self.stop_btn.place(x=165, y=buttons_y + 40)
+
+        
+    
+    def toggle_refresh_entry(self):
+        """Активация/деактивация поля времени перезагрузки"""
+        if hasattr(self, 'time_refresh_entry'):
+            if self.is_refresh.get():
+                self.time_refresh_entry.entry.config(state='normal')
+                self.time_refresh_entry.entry.config(fg='white')
+            else:
+                self.time_refresh_entry.entry.config(state='disabled')
+                self.time_refresh_entry.entry.config(fg='#888888')
     
     def create_console_panel(self, parent):
         console_container = tk.Frame(parent, bg="#152238")
@@ -348,13 +389,17 @@ class AppGUI:
 
     def on_save_run(self):
         """Обработчик кнопки Save and Run"""
+        #cостояние чекбокса
+        is_browser = self.is_browser.get() if hasattr(self, 'is_browser') else True
+        is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
+        time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
+
         params = {
             'url': self.url_entry.get(),
             'timeout': float(self.timeout_entry.get()) if self.timeout_entry.get().strip() else 0.5,
             'max_retries': int(self.retries_entry.get()) if self.retries_entry.get().strip() else 3,
-            'classOneClick': self.first_click_entry.get(),
-            'classTwoClick': self.last_click_entry.get(),
-            'classModal': self.modal_entry.get()
+            'is_browser': is_browser,
+            'time_refresh': time_refresh
         }
         
         # Фильтруем только заполненные параметры
@@ -362,14 +407,21 @@ class AppGUI:
         
         if params['url']:
             logging.info(f"🚀 Запуск процесса для URL: {params['url']}")
+            logging.info(f"🌐 Браузер: {'Firefox' if not is_browser else 'Chrome'}")
+            logging.info(f"🔄 Автоперезагрузка: {'Включена' if is_refresh else 'Выключена'}")
+            if is_refresh:
+                logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
+
+            #self.save_config(params) #добавление конфига в файл РАЗОБРАТЬСЯ !!!!!
+
+
             # Передаем параметры как аргументы
             self.start_process(
                 url=filtered_params.get('url', ''),
                 timeout=filtered_params.get('timeout', 0.5),
                 max_retries=filtered_params.get('max_retries', 3),
-                classOneClick=filtered_params.get('classOneClick', 'MuiTableRow-root'),
-                classTwoClick=filtered_params.get('classTwoClick', 'MuiButtonBase-root'),
-                classModal=filtered_params.get('classModal', 'MuiPaper-root')
+                is_browser=is_browser,
+                is_refresh=is_refresh
             )
         else:
             logging.warning("⚠️ URL не указан")
@@ -377,8 +429,18 @@ class AppGUI:
     def on_run(self):
         url = self.url_entry.get()
         if url:
+            is_browser = self.is_browser.get() if hasattr(self, 'is_browser') else True
+            is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
+            time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
             logging.info(f"🚀 Запуск процесса для URL: {url}")
+            logging.info(f"🌐 Браузер: {'Firefox' if not is_browser else 'Chrome'}")
+            logging.info(f"🔄 Автоперезагрузка: {'Включена' if is_refresh else 'Выключена'}")
+            if is_refresh:
+                logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
+
+
             self.start_process(url)
+            self.start_process(url, is_browser=is_browser, is_refresh=is_refresh, time_refresh=time_refresh)
         else:
             logging.warning("⚠️ URL не указан")
     
@@ -403,14 +465,26 @@ class AppGUI:
         thread.daemon = True
         thread.start()
 
-    def start_process(self, url, timeout=0.5, max_retries=3, classOneClick="MuiTableRow-root", classTwoClick="MuiButtonBase-root", classModal="MuiPaper-root"):
+    def start_process(self, url, timeout=0.5, max_retries=3,
+                      is_browser=False,
+                      is_refresh=True,
+                      time_refresh=20):
         """Запускает основной процесс в отдельном потоке"""
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 if self.core:
-                    loop.run_until_complete(self.core.run_main_process(url, timeout, max_retries, classOneClick, classTwoClick, classModal))
+                    loop.run_until_complete(
+                        self.core.run_main_process(
+                            url=url, 
+                            timeout=timeout, 
+                            max_retries=max_retries,
+                            is_browser=is_browser,  # <-- Передаем состояние чекбокса
+                            is_refresh=is_refresh,  # <-- Передаем состояние чекбокса
+                            time_refresh=time_refresh,  # <-- Передаем время перезагру
+                        )
+                    )
                 else:
                     logging.info(f"🔧 Запущен демо-процесс для {url}")
                     loop.run_until_complete(self.demo_process(url))
