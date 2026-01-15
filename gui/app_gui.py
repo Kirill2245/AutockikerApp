@@ -43,7 +43,7 @@ class AppGUI:
             return
         
         self.root.title("🚀 KLIK KLAK")
-        self.root.geometry("800x700")
+        self.root.geometry("800x690")
         self.root.configure(bg="#152238")
         self.root.resizable(True, True)
         
@@ -89,7 +89,7 @@ class AppGUI:
         settings_container.pack(side="left", fill="both", padx=(0, 10))
         
         # Фрейм настроек
-        settings_frame = RoundedFrame(settings_container, radius=15, color="#1E2B3E", width=350, height=450)
+        settings_frame = RoundedFrame(settings_container, radius=15, color="#1E2B3E", width=350, height=500)
         settings_frame.pack(fill="both", expand=True)
         
         # Заголовок настроек
@@ -102,32 +102,60 @@ class AppGUI:
         )
         settings_title.place(x=20, y=10)
         
-        # Поля ввода
+        # Поля ввода - исправлены координаты
         input_y = 50
         field_spacing = 55
         
-        # URL
+        # URL (первое поле)
         tk.Label(settings_container, text="URL сайта", fg="white", bg="#1E2B3E", 
                 font=("Arial", 10, "bold")).place(x=30, y=input_y)
         self.url_entry = ModernEntry(settings_container, placeholder="https://example.com", width=25)
         self.url_entry.place(x=30, y=input_y + 25)
-        
-        # Таймаут
-        tk.Label(settings_container, text="Таймаут (сек)", fg="white", bg="#1E2B3E",
+
+        # EMAIL (второе поле)
+        tk.Label(settings_container, text="Email", fg="white", bg="#1E2B3E", 
                 font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing)
-        self.timeout_entry = ModernEntry(settings_container, placeholder="0.5", width=25)
-        self.timeout_entry.place(x=30, y=input_y + field_spacing + 25)
-        
-        # Повторы
-        tk.Label(settings_container, text="Количество повторов", fg="white", bg="#1E2B3E",
+        self.email_entry = ModernEntry(settings_container, placeholder="user@example.com", width=25)
+        self.email_entry.place(x=30, y=input_y + field_spacing + 25)
+
+        # ПАРОЛЬ (третье поле)
+        tk.Label(settings_container, text="Пароль", fg="white", bg="#1E2B3E",
                 font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*2)
-        self.retries_entry = ModernEntry(settings_container, placeholder="3", width=25)
-        self.retries_entry.place(x=30, y=input_y + field_spacing*2 + 25)
+        self.password_entry = ModernEntry(settings_container, placeholder="password", width=25, show="*")
+        self.password_entry.place(x=30, y=input_y + field_spacing*2 + 25)
+
+        # Кнопка показа/скрытия пароля
+        self.show_password = tk.BooleanVar(value=False)
         
-        # ЧЕКБОКС ДЛЯ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ
+        self.password_toggle = tk.Checkbutton(
+            settings_container,
+            text="👁",
+            variable=self.show_password,
+            bg="#1E2B3E",
+            fg="#888888",
+            selectcolor="#1E2B3E",
+            activebackground="#1E2B3E",
+            activeforeground="#888888",
+            font=("Arial", 9),
+            command=self.toggle_password_visibility
+        )
+        self.password_toggle.place(x=310, y=input_y + field_spacing*2 + 30)
+        
+        # Таймаут (четвертое поле)
+        tk.Label(settings_container, text="Таймаут (сек)", fg="white", bg="#1E2B3E",
+                font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*3)
+        self.timeout_entry = ModernEntry(settings_container, placeholder="0.5", width=25)
+        self.timeout_entry.place(x=30, y=input_y + field_spacing*3 + 25)
+        
+        # Повторы (пятое поле)
+        tk.Label(settings_container, text="Количество повторов", fg="white", bg="#1E2B3E",
+                font=("Arial", 10, "bold")).place(x=30, y=input_y + field_spacing*4)
+        self.retries_entry = ModernEntry(settings_container, placeholder="3", width=25)
+        self.retries_entry.place(x=30, y=input_y + field_spacing*4 + 25)
+        
+        # ЧЕКБОКС ДЛЯ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ (шестое)
         self.is_refresh = tk.BooleanVar(value=True)  # По умолчанию включено
         
-        # Чекбокс для перезагрузки
         self.refresh_checkbox = tk.Checkbutton(
             settings_container,
             text="Автоперезагрузка страницы",
@@ -139,20 +167,20 @@ class AppGUI:
             activeforeground="white",
             font=("Arial", 10),
             anchor="w",
-            command=self.toggle_refresh_entry  # Функция для активации/деактивации поля
+            command=self.toggle_refresh_entry
         )
-        self.refresh_checkbox.place(x=30, y=input_y + field_spacing*3)
+        self.refresh_checkbox.place(x=30, y=input_y + field_spacing*5)
         
         # Поле для времени перезагрузки
         tk.Label(settings_container, text="Интервал перезагрузки (сек)", 
                 fg="#888888", bg="#1E2B3E",
-                font=("Arial", 9)).place(x=30, y=input_y + field_spacing*3 + 25)
+                font=("Arial", 9)).place(x=30, y=input_y + field_spacing*5 + 25)
         
         self.time_refresh_entry = ModernEntry(settings_container, placeholder="20", width=10)
-        self.time_refresh_entry.place(x=30, y=input_y + field_spacing*3 + 45)
+        self.time_refresh_entry.place(x=30, y=input_y + field_spacing*5 + 45)
         
         # Позиция для кнопки и чекбокса Firefox
-        buttons_y = input_y + field_spacing*4 + 70
+        buttons_y = input_y + field_spacing*6 + 70
         
         # Кнопка Save and Run
         self.save_run_btn = tk.Button(
@@ -212,10 +240,8 @@ class AppGUI:
         )
         self.stop_btn.place(x=165, y=buttons_y + 40)
 
-        
-    
     def toggle_refresh_entry(self):
-        """Активация/деактивация поля времени перезагрузки"""
+        "Активация/деактивация поля времени перезагрузки"
         if hasattr(self, 'time_refresh_entry'):
             if self.is_refresh.get():
                 self.time_refresh_entry.entry.config(state='normal')
@@ -223,6 +249,16 @@ class AppGUI:
             else:
                 self.time_refresh_entry.entry.config(state='disabled')
                 self.time_refresh_entry.entry.config(fg='#888888')
+
+    def toggle_password_visibility(self):
+        "Показывает или скрывает пароль"
+        if hasattr(self, 'password_entry'):
+            if self.show_password.get():
+                self.password_entry.entry.config(show="")
+                self.password_toggle.config(text="🙈")
+            else:
+                self.password_entry.entry.config(show="*")
+                self.password_toggle.config(text="👁")
     
     def create_console_panel(self, parent):
         console_container = tk.Frame(parent, bg="#152238")
@@ -257,11 +293,11 @@ class AppGUI:
             padx=10,
             pady=10
         )
-        self.console_text.place(x=20, y=50, width=360, height=350)
+        self.console_text.place(x=20, y=50, width=360, height=450)
         
         # Поле ввода команд
         input_frame = tk.Frame(console_container, bg="#1E2B3E")
-        input_frame.place(x=20, y=410, width=360, height=40)
+        input_frame.place(x=10, y=480, width=326, height=40)
         
         self.console_input = ModernEntry(input_frame, placeholder="Введите команду...", width=30)
         self.console_input.place(x=0, y=0)
@@ -278,7 +314,7 @@ class AppGUI:
             height=1,
             relief="flat"
         )
-        self.send_btn.place(x=323, y=2)
+        self.send_btn.place(x=290, y=2)
     
     def create_footer(self):
         footer_frame = tk.Frame(self.root, bg="#1E2B3E", height=30)
@@ -394,7 +430,14 @@ class AppGUI:
         is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
         time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
 
+        # Получаем email и пароль
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+
+
         params = {
+            'email': email,
+            'password': password,
             'url': self.url_entry.get(),
             'timeout': float(self.timeout_entry.get()) if self.timeout_entry.get().strip() else 0.5,
             'max_retries': int(self.retries_entry.get()) if self.retries_entry.get().strip() else 3,
@@ -405,34 +448,50 @@ class AppGUI:
         # Фильтруем только заполненные параметры
         filtered_params = {k: v for k, v in params.items() if v}
         
-        if params['url']:
+        if params['url'] and params['email'] and params['password']:
             logging.info(f"🚀 Запуск процесса для URL: {params['url']}")
+            logging.info(f"📧 Email: {params['email']}")
+            logging.info(f"🔐 Пароль: {'*' * len(params['password'])}")
             logging.info(f"🌐 Браузер: {'Firefox' if not is_browser else 'Chrome'}")
             logging.info(f"🔄 Автоперезагрузка: {'Включена' if is_refresh else 'Выключена'}")
             if is_refresh:
                 logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
 
-            #self.save_config(params) #добавление конфига в файл РАЗОБРАТЬСЯ !!!!!
-
 
             # Передаем параметры как аргументы
             self.start_process(
-                url=filtered_params.get('url', ''),
-                timeout=filtered_params.get('timeout', 0.5),
-                max_retries=filtered_params.get('max_retries', 3),
-                is_browser=is_browser,
-                is_refresh=is_refresh
+                email_user=params['email'],
+                password_user=params['password'],
+                url=params['url'],
+                timeout=params['timeout'],
+                max_retries=params['max_retries'],
+                is_browser=params['is_browser'],
+                is_refresh=params['is_refresh'],
+                time_refresh=params['time_refresh']
             )
         else:
-            logging.warning("⚠️ URL не указан")
+            missing = []
+            if not params['url']:
+                missing.append("URL")
+            if not params['email']:
+                missing.append("Email")
+            if not params['password']:
+                missing.append("Пароль")
+            
+            logging.warning(f"⚠️ Не заполнены поля: {', '.join(missing)}")
     
     def on_run(self):
         url = self.url_entry.get()
-        if url:
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+        
+        if url and email and password:
             is_browser = self.is_browser.get() if hasattr(self, 'is_browser') else True
             is_refresh = self.is_refresh.get() if hasattr(self, 'is_refresh') else True
             time_refresh = int(self.time_refresh_entry.get()) if self.time_refresh_entry.get().strip() and is_refresh else 20
             logging.info(f"🚀 Запуск процесса для URL: {url}")
+            logging.info(f"📧 Email: {email}")
+            logging.info(f"🔐 Пароль: {'*' * len(password)}")
             logging.info(f"🌐 Браузер: {'Firefox' if not is_browser else 'Chrome'}")
             logging.info(f"🔄 Автоперезагрузка: {'Включена' if is_refresh else 'Выключена'}")
             if is_refresh:
@@ -440,9 +499,17 @@ class AppGUI:
 
 
             self.start_process(url)
-            self.start_process(url, is_browser=is_browser, is_refresh=is_refresh, time_refresh=time_refresh)
+            self.start_process(email_user=email,password_user=password, url=url, is_browser=is_browser, is_refresh=is_refresh, time_refresh=time_refresh)
         else:
-            logging.warning("⚠️ URL не указан")
+            missing = []
+            if not url:
+                missing.append("URL")
+            if not email:
+                missing.append("Email")
+            if not password:
+                missing.append("Пароль")
+            
+            logging.warning(f"⚠️ Не заполнены поля: {', '.join(missing)}")
     
     def on_stop(self):
         logging.info("🛑 Остановка процесса")
@@ -465,7 +532,7 @@ class AppGUI:
         thread.daemon = True
         thread.start()
 
-    def start_process(self, url, timeout=0.5, max_retries=3,
+    def start_process(self, email_user, password_user, url, timeout=0.5, max_retries=3,
                       is_browser=False,
                       is_refresh=True,
                       time_refresh=20):
@@ -477,6 +544,8 @@ class AppGUI:
                 if self.core:
                     loop.run_until_complete(
                         self.core.run_main_process(
+                            email_user=email_user,
+                            password_user=password_user,
                             url=url, 
                             timeout=timeout, 
                             max_retries=max_retries,
