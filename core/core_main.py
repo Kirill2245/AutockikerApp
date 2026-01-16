@@ -134,9 +134,9 @@ class Core:
             await self.log("🚀 Начинаем основной процесс...")
             
             if is_browser:
-                self.driver = self._create_chrome_driver()
+                self.driver = self._create_fire_fox_driver()  # is_browser = True → Firefox
             else:
-                self.driver = self._create_fire_fox_driver()
+                self.driver = self._create_chrome_driver()    # is_browser = False → Chrome
             if not self.driver:
                 await self.log("❌ Не удалось запустить Браузер")
                 self.is_running = False
@@ -312,10 +312,8 @@ class Core:
                 except (asyncio.CancelledError, Exception):
                     pass
             
-            # Закрываем драйвер
             if self.driver:
                 try:
-                    # pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
                     self.driver.quit()
                     await self.log("✅ Chrome закрыт")
                 except Exception as e:
