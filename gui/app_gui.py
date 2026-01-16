@@ -560,7 +560,19 @@ class AppGUI:
     def on_stop(self):
         logging.info("🛑 Остановка процесса")
         self.stop_process()
-    
+    def get_config_path(self):
+        """Возвращает путь к файлу конфигурации"""
+        # Получаем путь к папке пользователя (C:\Users\ИмяПользователя)
+        user_folder = os.path.expanduser('~')
+        
+        # Создаем папку для конфигурации, если ее нет
+        config_folder = os.path.join(user_folder, 'AutoClickerConfig')
+        if not os.path.exists(config_folder):
+            os.makedirs(config_folder)
+        
+        # Полный путь к файлу конфигурации
+        config_path = os.path.join(config_folder, 'config.json')
+        return config_path
     def stop_process(self):
         def stop_async():
             loop = asyncio.new_event_loop()
@@ -596,7 +608,7 @@ class AppGUI:
             # Фильтруем пустые значения
             config = {k: v for k, v in config.items() if v is not None and v != ''}
             
-            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+            config_path = self.get_config_path()
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
             
@@ -610,7 +622,7 @@ class AppGUI:
     def load_config(self):
         "Загружает конфигурацию из файла"
         try:
-            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+            config_path = self.get_config_path()
             if not os.path.exists(config_path):
                 logging.info("📄 Файл конфигурации не найден, используется конфигурация по умолчанию")
                 return False
