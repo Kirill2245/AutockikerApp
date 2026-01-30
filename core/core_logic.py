@@ -70,13 +70,15 @@ class CoreLogic:
     
     def request_stop(self):
         """Останавливает все процессы"""
-        print("🛑 Запрашиваю остановку всех процессов...")
-        
-        if self.monitor:
-            self.monitor.request_stop()
-        
-        if self.refresher:
-            self.refresher.request_stop()
+        print("🛑 Запрашиваю остановку всех процессов мониторинга...")
+        try:
+            if self.monitor:
+                self.monitor.request_stop()
+            
+            if self.refresher:
+                self.refresher.request_stop()
+        except Exception as e:
+            print("❌ Критическая ошибка в завершении процесса: {e}")
     
     async def stop_all(self):
         """Асинхронная остановка всех процессов"""

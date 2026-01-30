@@ -422,6 +422,7 @@
    'PYMODULE'),
   ('core.utils.web_helpers',
    'C:\\Users\\Kirill\\Desktop\\.vs\\Phyton\\AutockikerApp\\core\\utils\\web_helpers.py',
+<<<<<<< HEAD
    'PYMODULE'),
   ('cryptography',
    'c:\\Users\\Kirill\\Desktop\\.vs\\Phyton\\.venv\\Lib\\site-packages\\cryptography\\__init__.py',
@@ -578,6 +579,8 @@
    'PYMODULE'),
   ('cryptography.x509.verification',
    'c:\\Users\\Kirill\\Desktop\\.vs\\Phyton\\.venv\\Lib\\site-packages\\cryptography\\x509\\verification.py',
+=======
+>>>>>>> f765203287c2ca7c32418ed98313e2dff409f4ff
    'PYMODULE'),
   ('csv',
    'C:\\Users\\Kirill\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\csv.py',

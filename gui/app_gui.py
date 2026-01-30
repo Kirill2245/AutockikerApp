@@ -710,17 +710,14 @@ class AppGUI:
                 if self.core:
                     loop.run_until_complete(
                         self.core.run_main_process(
-                            email_user,
-                            password_user,
-                            url, 
-                            timeout, 
-                            max_retries,
-                            classOneClick,
-                            classTwoClick,
-                            classModal,
-                            is_browser, 
-                            is_refresh,  
-                            time_refresh,  
+                            email_user=email_user,
+                            password_user=password_user,
+                            url=url, 
+                            timeout=timeout, 
+                            max_retries=max_retries,
+                            is_browser=is_browser,  # <-- Передаем состояние чекбокса
+                            is_refresh=is_refresh,  # <-- Передаем состояние чекбокса
+                            time_refresh=time_refresh,  # <-- Передаем время перезагру
                         )
                     )
                 else:

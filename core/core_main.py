@@ -122,10 +122,9 @@ class Core:
             print(f"❌ Ошибка запуска FireFox: {e}")
             return None
         
-    async def run_main_process(self,email_user, password_user, 
-                               url="https://thejwibvoknwefg.org/", timeout=0.5, max_retries=3,classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
-                            classModal="MuiDrawer-paperAnchorRight",
-                             is_browser = True, is_refresh = True , time_refresh = 20):
+    async def run_main_process(self,url, email_user, password_user , timeout=0.5, max_retries=3, 
+                            classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
+                            classModal="MuiDrawer-paperAnchorRight", is_browser = True, is_refresh = True , time_refresh = 20):
         """Запуск основного процесса"""
         
         if self.is_running:
@@ -140,9 +139,9 @@ class Core:
             await self.log("🚀 Начинаем основной процесс...")
             
             if is_browser:
-                self.driver = self._create_fire_fox_driver()
+                self.driver = self._create_fire_fox_driver()  # is_browser = True → Firefox
             else:
-                self.driver = self._create_chrome_driver()
+                self.driver = self._create_chrome_driver()    # is_browser = False → Chrome
             if not self.driver:
                 await self.log("❌ Не удалось запустить Браузер")
                 self.is_running = False
@@ -318,7 +317,6 @@ class Core:
                 except (asyncio.CancelledError, Exception):
                     pass
             
-            # Закрываем драйвер
             if self.driver:
                 try:
                     # pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
