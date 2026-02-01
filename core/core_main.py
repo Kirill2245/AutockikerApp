@@ -122,9 +122,10 @@ class Core:
             print(f"❌ Ошибка запуска FireFox: {e}")
             return None
         
-    async def run_main_process(self,url, email_user, password_user , timeout=0.5, max_retries=3, 
-                            classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
-                            classModal="MuiDrawer-paperAnchorRight", is_browser = True, is_refresh = True , time_refresh = 20):
+    async def run_main_process(self,email_user, password_user, 
+                               url="https://thejwibvoknwefg.org/", timeout=0.5, max_retries=3,classOneClick="css-y6j1my", classTwoClick="css-1xfoprh", 
+                            classModal="MuiDrawer-paperAnchorRight",
+                             is_browser = True, is_refresh = True , time_refresh = 20):
         """Запуск основного процесса"""
         
         if self.is_running:
