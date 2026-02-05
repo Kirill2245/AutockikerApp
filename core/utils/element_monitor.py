@@ -202,6 +202,7 @@ class ElementMonitor:
             # Проверяем, закрылась ли модалка
             await self.ensure_modal_closed(modal)
             data = self.extractor.extract_payment_data(context=row)
+
             await self.logger(f"Data - {data}")
             return True
         
