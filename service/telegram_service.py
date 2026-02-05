@@ -1,13 +1,11 @@
 # services/telegram_service.py
 import asyncio
 from telethon import TelegramClient, errors
-from telethon.tl.types import InputPeerUser
 import logging
-from typing import Optional, Dict, List
-import sys
-import os
+from typing import Optional
 
 class TelegramService:
+    """Упрощенный сервис для работы с Telegram API"""
     
     def __init__(self):
         self.client: Optional[TelegramClient] = None
@@ -23,12 +21,15 @@ class TelegramService:
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
-        self.logger.info(f"Установлены учетные данные: api_id={api_id}, phone={phone}")
+        self.logger.info(f"Установлены учетные данные: api_id={api_id}")
         
-    async def connect(self) -> bool:
+    async def connect_with_code(self, code: str = None) -> bool:
         """
         Подключается к Telegram с текущими учетными данными
         
+        Args:
+            code: Код подтверждения из SMS (опционально)
+            
         Returns:
             True если подключение успешно, False в противном случае
         """
@@ -41,7 +42,7 @@ class TelegramService:
             
             # Создаем клиента
             self.client = TelegramClient(
-                'telegram_session',  # Имя файла сессии
+                'session',  # Простое имя сессии
                 self.api_id,
                 self.api_hash
             )
@@ -53,32 +54,31 @@ class TelegramService:
             if not await self.client.is_user_authorized():
                 if self.phone:
                     self.logger.info(f"Запрашиваю код для {self.phone}")
-                    await self.client.send_code_request(self.phone)
                     
-                    # В GUI приложении нужно показать диалог для ввода кода
-                    # Здесь для примера возвращаем False, так как нужен код
-                    self.logger.warning("Требуется ввод кода подтверждения")
-                    return False
+                    if not code:
+                        self.logger.warning("Требуется код подтверждения")
+                        return False
+                    
+                    try:
+                        # Пытаемся войти с кодом
+                        await self.client.sign_in(self.phone, code)
+                        self.logger.info("Успешный вход с кодом")
+                        
+                    except errors.PhoneCodeInvalidError:
+                        self.logger.error("Неверный код подтверждения")
+                        return False
+                    except errors.SessionPasswordNeededError:
+                        self.logger.error("Требуется двухфакторная аутентификация")
+                        return False
                 else:
-                    self.logger.error("Телефон не указан для аутентификации")
+                    self.logger.error("Телефон не указан")
                     return False
-            else:
-                self.logger.info("Сессия уже авторизована")
             
             self.is_connected = True
             self.is_authenticated = True
             self.logger.info("Успешно подключено к Telegram")
             return True
             
-        except errors.PhoneNumberInvalidError:
-            self.logger.error("Неверный номер телефона")
-            return False
-        except errors.PhoneCodeInvalidError:
-            self.logger.error("Неверный код подтверждения")
-            return False
-        except errors.SessionPasswordNeededError:
-            self.logger.error("Требуется двухфакторная аутентификация")
-            return False
         except Exception as e:
             self.logger.error(f"Ошибка подключения: {str(e)}")
             return False
@@ -86,12 +86,6 @@ class TelegramService:
     async def send_to_saved_messages(self, message: str) -> bool:
         """
         Отправляет сообщение в Избранное (Saved Messages)
-        
-        Args:
-            message: Текст сообщения
-            
-        Returns:
-            True если отправка успешна, False в противном случае
         """
         if not self.is_connected or not self.client:
             self.logger.error("Не подключен к Telegram")
@@ -100,49 +94,12 @@ class TelegramService:
         try:
             self.logger.info(f"Отправка сообщения в Избранное: {message[:50]}...")
             
-            # Отправляем сообщение самому себе (в Saved Messages)
+            # Отправляем сообщение самому себе
             await self.client.send_message('me', message)
             
             self.logger.info("Сообщение успешно отправлено")
             return True
             
-        except Exception as e:
-            self.logger.error(f"Ошибка отправки сообщения: {str(e)}")
-            return False
-    
-    async def send_to_user(self, username: str, message: str) -> bool:
-        """
-        Отправляет сообщение конкретному пользователю
-        
-        Args:
-            username: Имя пользователя (без @)
-            message: Текст сообщения
-            
-        Returns:
-            True если отправка успешна, False в противном случае
-        """
-        if not self.is_connected or not self.client:
-            self.logger.error("Не подключен к Telegram")
-            return False
-            
-        try:
-            self.logger.info(f"Отправка сообщения пользователю @{username}")
-            
-            # Получаем информацию о пользователе
-            user = await self.client.get_entity(username)
-            
-            # Отправляем сообщение
-            await self.client.send_message(user, message)
-            
-            self.logger.info(f"Сообщение успешно отправлено @{username}")
-            return True
-            
-        except errors.UsernameInvalidError:
-            self.logger.error(f"Неверное имя пользователя: @{username}")
-            return False
-        except errors.UsernameNotOccupiedError:
-            self.logger.error(f"Пользователь @{username} не найден")
-            return False
         except Exception as e:
             self.logger.error(f"Ошибка отправки сообщения: {str(e)}")
             return False
@@ -161,28 +118,3 @@ class TelegramService:
     def is_ready(self) -> bool:
         """Проверяет, готов ли сервис к работе"""
         return self.is_connected and self.is_authenticated
-    
-    async def verify_code(self, code: str) -> bool:
-        """
-        Проверяет код подтверждения
-        
-        Args:
-            code: Код из SMS
-            
-        Returns:
-            True если код верный, False в противном случае
-        """
-        if not self.client or not self.phone:
-            return False
-            
-        try:
-            await self.client.sign_in(self.phone, code)
-            self.is_authenticated = True
-            self.logger.info("Код подтвержден успешно")
-            return True
-        except errors.PhoneCodeInvalidError:
-            self.logger.error("Неверный код подтверждения")
-            return False
-        except Exception as e:
-            self.logger.error(f"Ошибка проверки кода: {str(e)}")
-            return False

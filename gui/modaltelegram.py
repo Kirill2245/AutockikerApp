@@ -1,17 +1,25 @@
+# gui/modaltelegram.py
 import tkinter as tk
-from tkinter import scrolledtext, messagebox, Toplevel
+from tkinter import scrolledtext, messagebox, Toplevel, simpledialog
 import logging
+import threading
+import asyncio
 
 class ModalTelegram:
     def __init__(self, parent):
         self.parent = parent
         self.telegram_window = None  
+        self.telegram_service = None
+        
+    def set_telegram_service(self, service):
+        """Устанавливает сервис Telegram"""
+        self.telegram_service = service
         
     def open_windowtelegram(self):  
-        # Создаем окно для информации
+        # Создаем окно для настроек
         self.telegram_window = Toplevel(self.parent)
         self.telegram_window.title("Настройки Telegram")
-        self.telegram_window.geometry("450x550")
+        self.telegram_window.geometry("500x800")
         self.telegram_window.configure(bg="#1E2B3E")
         self.telegram_window.resizable(False, False)
         
@@ -26,16 +34,27 @@ class ModalTelegram:
         # Заголовок
         title_label = tk.Label(
             self.telegram_window,
-            text="Настройки Telegram API",
+            text="📱 Настройки Telegram API",
             font=("Arial", 16, "bold"),
             fg="white",
             bg="#1E2B3E"
         )
         title_label.pack(pady=15)
 
+        # Инструкция
+        instruction = tk.Label(
+            self.telegram_window,
+            text="Для получения API ID и API Hash посетите:\nhttps://my.telegram.org",
+            font=("Arial", 10, "italic"),
+            fg="#4FC3F7",
+            bg="#1E2B3E",
+            justify="center"
+        )
+        instruction.pack(pady=(0, 20))
+
         # Фрейм для API ID
         api_id_frame = tk.Frame(self.telegram_window, bg="#1E2B3E")
-        api_id_frame.pack(fill="x", padx=20, pady=(10, 5))
+        api_id_frame.pack(fill="x", padx=30, pady=(10, 5))
         
         tk.Label(
             api_id_frame,
@@ -52,23 +71,13 @@ class ModalTelegram:
             fg="white",
             insertbackground="white",
             relief="flat",
-            width=40
+            width=35
         )
         self.api_id_entry.pack(fill="x", pady=(0, 5))
-        
-        # Информация о том, где получить API ID
-        api_id_info = tk.Label(
-            api_id_frame,
-            text="Получить можно на my.telegram.org",
-            font=("Arial", 9, "italic"),
-            fg="#4FC3F7",
-            bg="#1E2B3E"
-        )
-        api_id_info.pack(anchor="w")
 
         # Фрейм для API Hash
         api_hash_frame = tk.Frame(self.telegram_window, bg="#1E2B3E")
-        api_hash_frame.pack(fill="x", padx=20, pady=(5, 10))
+        api_hash_frame.pack(fill="x", padx=30, pady=(5, 10))
         
         tk.Label(
             api_hash_frame,
@@ -85,8 +94,8 @@ class ModalTelegram:
             fg="white",
             insertbackground="white",
             relief="flat",
-            width=40,
-            show="*"  # Скрываем ввод для безопасности
+            width=35,
+            show="*"
         )
         self.api_hash_entry.pack(fill="x", pady=(0, 5))
         
@@ -106,9 +115,9 @@ class ModalTelegram:
         )
         show_hash_check.pack(anchor="w", pady=(5, 0))
 
-        # Фрейм для номера телефона (опционально)
+        # Фрейм для номера телефона
         phone_frame = tk.Frame(self.telegram_window, bg="#1E2B3E")
-        phone_frame.pack(fill="x", padx=20, pady=(5, 10))
+        phone_frame.pack(fill="x", padx=30, pady=(5, 10))
         
         tk.Label(
             phone_frame,
@@ -125,24 +134,31 @@ class ModalTelegram:
             fg="white",
             insertbackground="white",
             relief="flat",
-            width=40
+            width=35
         )
         self.phone_entry.pack(fill="x", pady=(0, 5))
-        
-        # Добавляем плейсхолдер вручную
         self.phone_entry.insert(0, "+79991234567")
-        self.phone_entry.config(fg="gray")
-        self.phone_entry.bind("<FocusIn>", self._on_phone_focus_in)
-        self.phone_entry.bind("<FocusOut>", self._on_phone_focus_out)
-
+        
         # Разделитель
         separator = tk.Frame(self.telegram_window, height=2, bg="#2D4A5D")
-        separator.pack(fill="x", padx=20, pady=10)
+        separator.pack(fill="x", padx=30, pady=15)
 
-        # ВАЖНО: добавляем self. чтобы сделать атрибутом класса
+        # Фрейм для сообщения
+        message_frame = tk.Frame(self.telegram_window, bg="#1E2B3E")
+        message_frame.pack(fill="both", expand=True, padx=30, pady=(5, 10))
+        
+        tk.Label(
+            message_frame,
+            text="Тестовое сообщение:",
+            font=("Arial", 11, "bold"),
+            fg="white",
+            bg="#1E2B3E"
+        ).pack(anchor="w", pady=(0, 5))
+        
         self.text_area = scrolledtext.ScrolledText(
+            message_frame,
             wrap=tk.WORD,
-            width=50,
+            width=45,
             height=8,
             bg="#2D4A5D",
             fg="white",
@@ -151,15 +167,16 @@ class ModalTelegram:
             relief="flat"
         )
         self.text_area.pack(fill="both", expand=True, pady=(0, 5))
+        self.text_area.insert("1.0", "Привет от KLIK KLAK! 🚀")
 
         # Фрейм для кнопок
         button_frame = tk.Frame(self.telegram_window, bg="#1E2B3E")
-        button_frame.pack(fill="x", padx=20, pady=(10, 20))
+        button_frame.pack(fill="x", padx=30, pady=(10, 20))
         
         # Кнопка отправки
         send_btn = tk.Button(
             button_frame,
-            text="Подключиться и отправить",
+            text="📤 Отправить тестовое сообщение",
             font=("Arial", 11, "bold"),
             bg="#4FC3F7",
             fg="white",
@@ -168,15 +185,15 @@ class ModalTelegram:
             relief="flat",
             cursor="hand2",
             padx=20,
-            pady=8,
-            command=self._send_to_telegram
+            pady=10,
+            command=self._send_test_message
         )
-        send_btn.pack(side="right", padx=(10, 0))
+        send_btn.pack(fill="x", pady=(0, 10))
         
         # Кнопка отмены
         cancel_btn = tk.Button(
             button_frame,
-            text="Отмена",
+            text="Закрыть",
             font=("Arial", 11),
             bg="#2D4A5D",
             fg="white",
@@ -197,82 +214,8 @@ class ModalTelegram:
         else:
             self.api_hash_entry.config(show="*")
 
-    def _on_phone_focus_in(self, event):
-        """Обработчик фокуса на поле номера телефона"""
-        if self.phone_entry.get() == "+79991234567":
-            self.phone_entry.delete(0, tk.END)
-            self.phone_entry.config(fg="white")
-
-    def _on_phone_focus_out(self, event):
-        """Обработчик потери фокуса полем номера телефона"""
-        if not self.phone_entry.get():
-            self.phone_entry.insert(0, "+79991234567")
-            self.phone_entry.config(fg="gray")
-
-    def _send_to_telegram(self):
-        """Обработчик отправки в Telegram"""
-        # Получаем данные из полей ввода
-        api_id = self.api_id_entry.get().strip()
-        api_hash = self.api_hash_entry.get().strip()
-        phone = self.phone_entry.get().strip()
-        
-        # Теперь self.text_area доступен как атрибут класса
-        message = self.text_area.get("1.0", tk.END).strip()
-        
-        # Валидация
-        if not api_id:
-            messagebox.showerror("Ошибка", "Введите API ID")
-            return
-            
-        if not api_hash:
-            messagebox.showerror("Ошибка", "Введите API Hash")
-            return
-            
-        if not api_id.isdigit():
-            messagebox.showerror("Ошибка", "API ID должен состоять только из цифр")
-            return
-            
-            
-        if phone == "+79991234567":  # Если остался плейсхолдер
-            phone = ""
-        
-        try:
-            # Здесь будет логика подключения к Telegram API
-            # Например:
-            # from telethon import TelegramClient
-            # client = TelegramClient('session', int(api_id), api_hash)
-            # await client.start(phone=phone if phone else None)
-            
-            
-            messagebox.showinfo("Успех", 
-                f"Данные получены:\n"
-                f"API ID: {api_id}\n"
-                f"API Hash: {'*' * len(api_hash)}\n"
-                f"Телефон: {phone if phone else 'не указан'}\n"
-            )
-                
-            # Закрываем окно
-            self.telegram_window.destroy()
-            
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось отправить: {str(e)}")
-
-    def get_credentials(self):
-        """Возвращает введенные учетные данные"""
-        if hasattr(self, 'api_id_entry') and hasattr(self, 'api_hash_entry'):
-            phone = self.phone_entry.get()
-            if phone == "+79991234567":  # Если плейсхолдер
-                phone = ""
-                
-            return {
-                'api_id': self.api_id_entry.get(),
-                'api_hash': self.api_hash_entry.get(),
-                'phone': phone
-            }
-        return None
-    
-    def _send_to_telegram(self):
-        """Обработчик отправки в Telegram"""
+    def _send_test_message(self):
+        """Отправляет тестовое сообщение в Telegram"""
         api_id = self.api_id_entry.get().strip()
         api_hash = self.api_hash_entry.get().strip()
         phone = self.phone_entry.get().strip()
@@ -295,27 +238,83 @@ class ModalTelegram:
             messagebox.showerror("Ошибка", "Введите сообщение для отправки")
             return
             
-        if phone == "+79991234567":  # Если остался плейсхолдер
-            phone = ""
+        if phone == "+79991234567":
+            messagebox.showerror("Ошибка", "Введите свой номер телефона")
+            return
         
         try:
-            # Закрываем окно
-            self.telegram_window.destroy()
+            # Преобразуем API ID в число
+            api_id_int = int(api_id)
             
-            # Вызываем callback в основном приложении если он есть
-            if hasattr(self.parent, 'on_telegram_credentials_saved'):
-                self.parent.on_telegram_credentials_saved({
-                    'api_id': api_id,
-                    'api_hash': api_hash,
-                    'phone': phone,
-                    'message': message
-                })
-            else:
-                # Или просто показываем сообщение
-                messagebox.showinfo("Успех", 
-                    f"Данные получены:\n"
-                    f"API ID: {api_id}\n"
-                    f"Телефон: {phone if phone else 'не указан'}")
-                
+            # Запускаем процесс в отдельном потоке
+            threading.Thread(
+                target=self._send_message_thread,
+                args=(api_id_int, api_hash, phone, message),
+                daemon=True
+            ).start()
+            
+        except ValueError:
+            messagebox.showerror("Ошибка", "API ID должен быть числом")
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось сохранить: {str(e)}")
+            messagebox.showerror("Ошибка", f"Ошибка: {str(e)}")
+    
+    def _send_message_thread(self, api_id: int, api_hash: str, phone: str, message: str):
+        """Отправляет сообщение в отдельном потоке"""
+        async def send():
+            try:
+                from telethon import TelegramClient
+                
+                # Создаем клиента
+                client = TelegramClient('session', api_id, api_hash)
+                await client.connect()
+                
+                # Проверяем авторизацию
+                if not await client.is_user_authorized():
+                    # Запрашиваем код
+                    await client.send_code_request(phone)
+                    
+                    # Запрашиваем код у пользователя в основном потоке
+                    code = await self._get_code_from_user()
+                    
+                    if not code:
+                        self._show_message("Отменено", "Ввод кода отменен")
+                        return
+                    
+                    # Пытаемся войти с кодом
+                    try:
+                        await client.sign_in(phone, code)
+                    except Exception as e:
+                        self._show_message("Ошибка", f"Неверный код: {str(e)}")
+                        return
+                
+                # Отправляем сообщение
+                await client.send_message('me', message)
+                await client.disconnect()
+                
+                self._show_message("Успех", "✅ Сообщение отправлено в Избранное!")
+                
+            except Exception as e:
+                self._show_message("Ошибка", f"❌ Ошибка: {str(e)}")
+        
+        # Запускаем асинхронную функцию
+        asyncio.run(send())
+    
+    def _show_message(self, title: str, message: str):
+        """Показывает сообщение в основном потоке"""
+        self.parent.after(0, lambda: messagebox.showinfo(title, message))
+    
+    async def _get_code_from_user(self):
+        """Запрашивает код у пользователя"""
+        import asyncio
+        future = asyncio.Future()
+        
+        def ask_code():
+            code = simpledialog.askstring(
+                "Код подтверждения",
+                f"Введите 5-значный код из Telegram,\nотправленный на номер {self.phone_entry.get().strip()}",
+                parent=self.telegram_window
+            )
+            future.set_result(code)
+        
+        self.parent.after(0, ask_code)
+        return await future
