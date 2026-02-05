@@ -8,10 +8,12 @@ from tkinter import scrolledtext
 from emitter import global_emitter
 from service.auth_manager import auth_manager
 from service.emailservice import EmailService
+from service.telegram_service import TelegramService  # Импортируем сервис
 from tkinter import scrolledtext, messagebox, Toplevel, filedialog
 import smtplib
 from modalreport import ModalReport
 from modalinfo import ModalInfo
+from modaltelegram import ModalTelegram
 from .UI.ui import *
 from .UI.header import Header
 import os
@@ -26,15 +28,27 @@ class AppGUI:
         self.root = root
         self.core = core_instance
         self.header = Header(self.root)
-        self.encryption_key = self._get_encryption_key() # Ключ для шифрования (можно сохранить в отдельный файл или использовать фиксированный)
-        self.setup_ui()  # Сначала создаем UI
-        self.setup_logging()  # Затем настраиваем логирование
+        self.encryption_key = self._get_encryption_key()
+        
+        # Сначала создаем сервис Telegram
+        self.telegram_service = TelegramService()
+        
+        # Затем создаем UI и остальные компоненты
+        self.setup_ui()
+        self.setup_logging()
         self.email_service = EmailService()
         self.modal_report = ModalReport(self.root, self.email_service)
         self.modal_info = ModalInfo(self.root)
-
+        self.modal_telegram = ModalTelegram(self.root)
+        
+        # Теперь передаем сервис Telegram в модальное окно
+        self.modal_telegram.set_telegram_service(self.telegram_service)
+        
         # Загружаем сохраненную конфигурацию
         self.load_config()
+        
+        # Загружаем Telegram настройки если есть
+        self.load_telegram_config()
 
     def _get_encryption_key(self):
         "Получаем или создаем ключ шифрования"
@@ -352,8 +366,8 @@ class AppGUI:
         # Кнопка информации (теперь слева)
         info_btn = tk.Label(
             footer_frame,
-            text="ℹ Информация",
-            font=("Arial", 9, "underline"),
+            text="Информация",
+            font=("Arial", 11, "underline"),
             fg="#4FC3F7",
             bg="#1E2B3E",
             cursor="hand2"
@@ -364,14 +378,30 @@ class AppGUI:
         # Кнопка обратной связи 
         feedback_btn = tk.Label(
             footer_frame,
-            text="📧 Сообщить об ошибке",
-            font=("Arial", 9, "underline"),
+            text="Сообщить об ошибке",
+            font=("Arial", 11, "underline"),
             fg="#4FC3F7",
             bg="#1E2B3E",
             cursor="hand2"
         )
         feedback_btn.pack(side="right", padx=10) 
         feedback_btn.bind("<Button-1>", lambda e: self.modal_report.open_feedback_window())
+
+        # Кнопка Telegram
+        telegram_btn = tk.Label(
+            footer_frame,
+            text="Telegram",
+            font=("Arial", 11, "underline"),
+            fg="#4FC3F7",
+            bg="#1E2B3E",
+            cursor="hand2"
+        )
+        telegram_btn.pack(side="top", padx=10) 
+        telegram_btn.bind("<Button-1>", lambda e: self.open_telegram_settings())
+
+    def open_telegram_settings(self):
+        """Открывает окно настроек Telegram"""
+        self.modal_telegram.open_windowtelegram()
 
     def write_to_console(self, message, level=logging.INFO):
         """Добавляет текст в консоль с указанным уровнем"""
@@ -408,10 +438,37 @@ class AppGUI:
                 self.clear_console()
             elif command.lower() == "status":
                 self.write_to_console("✅ Система работает нормально\n")
+            elif command.lower().startswith("tg "):
+                # Команды для Telegram
+                parts = command.split(" ", 2)
+                if len(parts) >= 3 and parts[1] == "send":
+                    message = parts[2]
+                    self.send_telegram_message_async(message)
+                    self.write_to_console(f"📤 Отправка сообщения в Telegram: {message[:50]}...\n")
+                elif len(parts) >= 2 and parts[1] == "status":
+                    status = "✅ Подключен" if self.telegram_service.is_ready() else "❌ Не подключен"
+                    self.write_to_console(f"📱 Telegram статус: {status}\n")
             else:
                 self.write_to_console(f"❌ Неизвестная команда: {command}\n")
             
             self.console_input.entry.delete(0, tk.END)
+    
+    def send_telegram_message_async(self, message: str):
+        """Асинхронно отправляет сообщение в Telegram"""
+        async def send():
+            if self.telegram_service.is_ready():
+                success = await self.telegram_service.send_to_saved_messages(message)
+                if success:
+                    self.root.after(0, lambda: logging.info("✅ Сообщение отправлено в Telegram"))
+                else:
+                    self.root.after(0, lambda: logging.error("❌ Не удалось отправить сообщение"))
+            else:
+                self.root.after(0, lambda: logging.warning("⚠️ Telegram не подключен. Настройте подключение в окне Telegram."))
+        
+        threading.Thread(
+            target=lambda: asyncio.run(send()),
+            daemon=True
+        ).start()
     
     def show_help(self):
         """Список доступных команд"""
@@ -420,6 +477,8 @@ class AppGUI:
         • help - показать справку
         • clear - очистить консоль  
         • status - статус системы
+        • tg send [текст] - отправить в Telegram
+        • tg status - статус Telegram
         """
         self.write_to_console(help_text)
     
@@ -491,6 +550,9 @@ class AppGUI:
             if is_refresh:
                 logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
 
+            # Отправляем уведомление в Telegram о старте процесса
+            start_message = f"🚀 Запущен процесс для {params['url']}"
+            self.send_telegram_message_async(start_message)
 
             # Передаем параметры как аргументы
             self.start_process(
@@ -536,6 +598,10 @@ class AppGUI:
             if is_refresh:
                 logging.info(f"⏱️ Интервал перезагрузки: {time_refresh} сек")
 
+            # Отправляем уведомление в Telegram
+            start_message = f"🚀 Запущен процесс для {url}"
+            self.send_telegram_message_async(start_message)
+
             self.start_process(
                 email_user=email,
                 password_user=password,
@@ -560,6 +626,11 @@ class AppGUI:
     def on_stop(self):
         logging.info("🛑 Остановка процесса")
         self.stop_process()
+        
+        # Отправляем уведомление в Telegram
+        stop_message = "🛑 Процесс остановлен"
+        self.send_telegram_message_async(stop_message)
+        
     def get_config_path(self):
         """Возвращает путь к файлу конфигурации"""
         # Получаем путь к папке пользователя (C:\Users\ИмяПользователя)
@@ -573,6 +644,7 @@ class AppGUI:
         # Полный путь к файлу конфигурации
         config_path = os.path.join(config_folder, 'config.json')
         return config_path
+    
     def stop_process(self):
         def stop_async():
             loop = asyncio.new_event_loop()
@@ -698,6 +770,88 @@ class AppGUI:
             # Если расшифровка не удалась, возвращаем как есть
             return encrypted_password
 
+    def get_telegram_config_path(self):
+        """Возвращает путь к файлу конфигурации Telegram"""
+        user_folder = os.path.expanduser('~')
+        config_folder = os.path.join(user_folder, 'AutoClickerConfig')
+        if not os.path.exists(config_folder):
+            os.makedirs(config_folder)
+        return os.path.join(config_folder, 'telegram_config.json')
+
+    def save_telegram_config(self, credentials: dict):
+        """Сохраняет конфигурацию Telegram в файл"""
+        try:
+            # Шифруем чувствительные данные
+            cipher = Fernet(self.encryption_key)
+            
+            config = {
+                'api_id': credentials['api_id'],
+                'api_hash': cipher.encrypt(credentials['api_hash'].encode()).decode('utf-8'),
+                'phone': credentials['phone'] if credentials['phone'] else ''
+            }
+            
+            config_path = self.get_telegram_config_path()
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            
+            logging.info("✅ Конфигурация Telegram сохранена")
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка сохранения конфигурации Telegram: {e}")
+            return False
+
+    def load_telegram_config(self):
+        """Загружает конфигурацию Telegram из файла"""
+        try:
+            config_path = self.get_telegram_config_path()
+            if not os.path.exists(config_path):
+                logging.info("📄 Файл конфигурации Telegram не найден")
+                return False
+            
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # Расшифровываем данные
+            cipher = Fernet(self.encryption_key)
+            
+            api_hash = cipher.decrypt(config['api_hash'].encode()).decode('utf-8')
+            
+            # Устанавливаем учетные данные в сервис
+            self.telegram_service.set_credentials(
+                api_id=int(config['api_id']),
+                api_hash=api_hash,
+                phone=config['phone'] if config['phone'] else None
+            )
+            
+            # Пытаемся подключиться
+            threading.Thread(
+                target=self.connect_telegram_async,
+                daemon=True
+            ).start()
+            
+            logging.info("✅ Конфигурация Telegram загружена")
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка загрузки конфигурации Telegram: {e}")
+            return False
+
+    def connect_telegram_async(self):
+        """Асинхронно подключается к Telegram"""
+        async def connect():
+            success = await self.telegram_service.connect()
+            if success:
+                self.root.after(0, lambda: logging.info("✅ Успешно подключено к Telegram"))
+            else:
+                self.root.after(0, lambda: logging.warning("⚠️ Не удалось подключиться к Telegram"))
+        
+        thread = threading.Thread(
+            target=lambda: asyncio.run(connect()),
+            daemon=True
+        )
+        thread.start()
+
     def start_process(self, email_user, password_user, url, timeout=0.5, max_retries=3,
                       is_browser=False,
                       is_refresh=True,
@@ -705,32 +859,3 @@ class AppGUI:
         """Запускает основной процесс в отдельном потоке"""
         def run_async():
             loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                if self.core:
-                    loop.run_until_complete(
-                        self.core.run_main_process(
-                            email_user,
-                            password_user,
-                            url, 
-                            timeout, 
-                            max_retries,
-                            classOneClick,
-                            classTwoClick,
-                            classModal,
-                            is_browser, 
-                            is_refresh,  
-                            time_refresh,  
-                        )
-                    )
-                else:
-                    logging.info(f"🔧 Запущен демо-процесс для {url}")
-                    loop.run_until_complete(self.demo_process(url))
-            except Exception as e:
-                logging.error(f"❌ Ошибка в процессе: {e}")
-            finally:
-                loop.close()
-
-        thread = threading.Thread(target=run_async)
-        thread.daemon = True
-        thread.start()
