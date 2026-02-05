@@ -3,7 +3,7 @@ import asyncio
 import logging
 from selenium.webdriver.common.by import By
 from .web_helpers import WebHelpers
-
+from .data_extractor import DataExtractor
 class ElementMonitor:
     def __init__(self, driver, helpers, max_retries, timeout, 
                  class_one_click, class_two_click, class_modal, logger_func):
@@ -34,6 +34,8 @@ class ElementMonitor:
         self.last_count = 0
         self.processed_count = 0
         self.last_reset_time = None
+
+        self.extractor = DataExtractor(driver)
         
     def request_stop(self):
         """Запрашивает остановку мониторинга"""
@@ -65,7 +67,7 @@ class ElementMonitor:
         try:
             self.is_clicking = True
             
-            row_info = self.helpers.get_element_info(row)
+            
             
             if not row.is_displayed() or not row.is_enabled():
                 print(f"⚠️ Строка {row_index+1} не доступна для клика, пропускаем")
@@ -81,10 +83,17 @@ class ElementMonitor:
             ):
                 print(f"✅ Кликнули на строку таблицы {row_index+1}")
                 if self.logger:
-                    await self.logger(f"✅ Кликнули на строку таблицы {row_index+1}: {row_info}", logging.INFO)
+                    await self.logger(f"✅ Кликнули на строку таблицы {row_index+1}", logging.INFO)
+                # data = self.extractor.extract_payment_data_simple(row)
+                # if data:
+                #     print(f"📋 Данные из строки {row_index+1}:")
+                #     for key, value in data.items():
+                #         if value:
+                #             print(f"  {key}: {value}")
                 
+                # await self.logger(f"Data - {data}")
                 # Обрабатываем модальное окно
-                result = await self.process_modal_window(row_index)
+                result = await self.process_modal_window(row_index, row)
                 
                 self.is_clicking = False
                 return result
@@ -122,7 +131,7 @@ class ElementMonitor:
         except:
             pass
     
-    async def process_modal_window(self, row_index):
+    async def process_modal_window(self, row_index, row):
         """Обрабатывает модальное окно"""
         # Ищем модальное окно
         modal = self.helpers.wait_for_element_by_css(
@@ -152,9 +161,9 @@ class ElementMonitor:
                 await self.logger(f"❌ Найдена левая модалка вместо правой: {modal_classes}", logging.WARNING)
             return False
         
-        modal_info = self.helpers.get_element_info(modal)
+        
         if self.logger:
-            await self.logger(f"✅ Найдено правильное модальное окно: {modal_info}", logging.INFO)
+            await self.logger(f"✅ Найдено правильное модальное окно", logging.INFO)
         
         await asyncio.sleep(self.timeout / 2)
         
@@ -192,7 +201,8 @@ class ElementMonitor:
             
             # Проверяем, закрылась ли модалка
             await self.ensure_modal_closed(modal)
-            
+            data = self.extractor.extract_payment_data(context=row)
+            await self.logger(f"Data - {data}")
             return True
         
         return False

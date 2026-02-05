@@ -65,14 +65,14 @@ class WebHelpers:
             get_info_func = WebHelpers.get_element_info
             
         element_info = get_info_func(elem)
-        print(f'Клик по {element_type}: {element_info}')
+        print(f'Клик по {element_type}')
         
         for attempt in range(max_retries):
             try:
                 if elem:
                     # Логируем информацию об элементе перед кликом
                     if logger_func:
-                        await logger_func(f"Кликаем по {element_type}: {element_info}", logging.INFO)
+                        await logger_func(f"Кликаем по {element_type}", logging.INFO)
                     
                     try:
                         # Пробуем обычный клик
