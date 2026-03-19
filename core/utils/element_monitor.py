@@ -4,6 +4,7 @@ import logging
 from selenium.webdriver.common.by import By
 from .web_helpers import WebHelpers
 from .data_extractor import DataExtractor
+from service.telegram_service import TelegramService
 class ElementMonitor:
     def __init__(self, driver, helpers, max_retries, timeout, 
                  class_one_click, class_two_click, class_modal, logger_func):
@@ -36,6 +37,7 @@ class ElementMonitor:
         self.last_reset_time = None
 
         self.extractor = DataExtractor(driver)
+        self.telegram_service = TelegramService()
         
     def request_stop(self):
         """Запрашивает остановку мониторинга"""
@@ -84,14 +86,14 @@ class ElementMonitor:
                 print(f"✅ Кликнули на строку таблицы {row_index+1}")
                 if self.logger:
                     await self.logger(f"✅ Кликнули на строку таблицы {row_index+1}", logging.INFO)
-                # data = self.extractor.extract_payment_data_simple(row)
-                # if data:
-                #     print(f"📋 Данные из строки {row_index+1}:")
-                #     for key, value in data.items():
-                #         if value:
-                #             print(f"  {key}: {value}")
-                
-                # await self.logger(f"Data - {data}")
+                data = self.extractor.extract_payment_data_simple(row)
+                if data:
+                    print(f"📋 Данные из строки {row_index+1}:")
+                    for key, value in data.items():
+                        if value:
+                            print(f"  {key}: {value}")
+                self.telegram_service.send_to_saved_messages(f"  {key}: {value}")
+                await self.logger(f"Data - {data}")
                 # Обрабатываем модальное окно
                 result = await self.process_modal_window(row_index, row)
                 
