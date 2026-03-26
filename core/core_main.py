@@ -99,7 +99,7 @@ class Core:
             driver = uc.Chrome(
                 options=options,
                 headless=False,
-                version_main=144
+                version_main=146
             )
             print("✅ Chrome успешно запущен!")
             return driver
